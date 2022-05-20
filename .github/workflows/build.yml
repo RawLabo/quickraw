@@ -1,0 +1,187 @@
+name: Build quickraw
+
+on:
+  push:
+    branches: [ main ]
+    
+  workflow_dispatch:
+
+jobs:
+  Build_Win:
+    runs-on: windows-2019
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Compile
+        run: cargo build --release
+
+      - name: Upload traget bin
+        uses: actions/upload-artifact@v2
+        with:
+          name: win.zip
+          path: target/release/quickraw.exe
+
+  Build_MacOS:
+    runs-on: macos-11
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Compile
+        run: |
+          rustup target add aarch64-apple-darwin
+          cargo build --release
+          cargo build --release --target aarch64-apple-darwin
+          lipo -create -output ./quickraw ./target/release/quickraw ./target/aarch64-apple-darwin/release/quickraw
+
+      - name: Upload traget bin
+        uses: actions/upload-artifact@v2
+        with:
+          name: macos.zip
+          path: ./quickraw
+
+
+  Build_Linux:
+    needs: [Build_MacOS, Build_Win]
+    runs-on: ubuntu-18.04
+    permissions: write-all
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      # For better tag description
+      - name: Remove local nightly tag
+        run: git tag -d nightly
+
+      - name: Set variables
+        id: vars
+        run: |
+          echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
+          echo "::set-output name=tag::$(git describe --tags HEAD)"
+
+      - name: Compile
+        run: cargo build --release
+
+      - name: Download prev builds
+        uses: actions/download-artifact@v2
+
+      - name: Extract artifacts
+        run: |
+          mv target/release/quickraw ./quickraw-linux
+          strip ./quickraw-linux
+          7z x *.zip
+          mv win.zip/* ./quickraw-win.exe
+          mv macos.zip/* ./quickraw-macos.zip
+
+      - name: Get packages file name
+        id: names
+        run: |
+          echo "::set-output name=linux_build::quickraw-linux"
+          echo "::set-output name=win_build::quickraw-win.exe"
+          echo "::set-output name=macos_build::quickraw-macos.zip"
+
+      # Publish builds
+      - name: Remove nightly tag 
+        uses: dev-drprasad/delete-tag-and-release@v0.2.0
+        with:
+          delete_release: true
+          tag_name: nightly
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
+
+      # Create nightly release as prerelease
+      - name: Create nightly prerelease
+        id: nightly_prerelease
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: nightly
+          release_name: Nightly builds - ${{ steps.vars.outputs.sha_short }}
+          prerelease: true
+          draft: false
+          body: Automated builds for nightly prerelease via Github Actions
+
+      - name: Upload linux nightly build
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.nightly_prerelease.outputs.upload_url }}
+          asset_path: ${{ steps.names.outputs.linux_build }}
+          asset_name: ${{ steps.names.outputs.linux_build }}
+          asset_content_type: application/x-executable
+
+      - name: Upload win nightly build
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.nightly_prerelease.outputs.upload_url }}
+          asset_path: ${{ steps.names.outputs.win_build }}
+          asset_name: ${{ steps.names.outputs.win_build }}
+          asset_content_type: application/octet-stream
+
+      - name: Upload macos nightly build
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.nightly_prerelease.outputs.upload_url }}
+          asset_path: ${{ steps.names.outputs.macos_build }}
+          asset_name: ${{ steps.names.outputs.macos_build }}
+          asset_content_type: application/zip
+
+      # Create version release if there is a version tag
+      - name: Create tag release
+        if: ${{ !contains(steps.vars.outputs.tag, '-') }}
+        id: tag_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.vars.outputs.tag }}
+          release_name: Release ${{ steps.vars.outputs.tag }}
+          prerelease: false
+          draft: false
+          body: Automated builds for version releases via Github Actions
+          
+      - name: Upload linux version build
+        if: ${{ !contains(steps.vars.outputs.tag, '-') }}
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.tag_release.outputs.upload_url }}
+          asset_path: ${{ steps.names.outputs.linux_build }}
+          asset_name: ${{ steps.names.outputs.linux_build }}
+          asset_content_type: application/x-executable
+
+      - name: Upload win version build
+        if: ${{ !contains(steps.vars.outputs.tag, '-') }}
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.tag_release.outputs.upload_url }}
+          asset_path: ${{ steps.names.outputs.win_build }}
+          asset_name: ${{ steps.names.outputs.win_build }}
+          asset_content_type: application/octet-stream
+
+      - name: Upload macos version build
+        if: ${{ !contains(steps.vars.outputs.tag, '-') }}
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.tag_release.outputs.upload_url }}
+          asset_path: ${{ steps.names.outputs.macos_build }}
+          asset_name: ${{ steps.names.outputs.macos_build }}
+          asset_content_type: application/zip
