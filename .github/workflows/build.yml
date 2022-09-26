@@ -1,10 +1,13 @@
-name: Build quickraw
+name: Build Release
 
 on:
   push:
     branches: [ main ]
     
   workflow_dispatch:
+
+env:
+  EXE_NAME: quickraw
 
 jobs:
   Build_Win:
@@ -16,13 +19,14 @@ jobs:
           fetch-depth: 0
 
       - name: Compile
-        run: cargo build --release
+        run: cargo build -r --all-features --bin quickraw
 
       - name: Upload traget bin
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
-          name: win.zip
-          path: target/release/quickraw.exe
+          name: win.build
+          path: target/release/${{ env.EXE_NAME }}.exe
+
 
   Build_MacOS:
     runs-on: macos-11
@@ -35,20 +39,76 @@ jobs:
       - name: Compile
         run: |
           rustup target add aarch64-apple-darwin
-          cargo build --release
-          cargo build --release --target aarch64-apple-darwin
-          lipo -create -output ./quickraw ./target/release/quickraw ./target/aarch64-apple-darwin/release/quickraw
+          cargo build -r --all-features --bin quickraw
+          cargo build -r --all-features --bin quickraw --target aarch64-apple-darwin
+          lipo -create -output ./${{ env.EXE_NAME }} ./target/release/${{ env.EXE_NAME }} ./target/aarch64-apple-darwin/release/${{ env.EXE_NAME }}
+          strip ./${{ env.EXE_NAME }}
+          zip -9 ${{ env.EXE_NAME }}.zip ./${{ env.EXE_NAME }}
+      
+      - name: Codesign for macos build
+        # GAS = Github Actions Secret
+        # 0. create a new cert at https://developer.apple.com/account/resources/certificates/list.
+        # 1. download cert.
+        # 2. use keychain app to import the .cer cert in the `login` chains and to export it as a .p12 cert
+        # 3. use `base64 the_dev_cert.p12 | pbcopy` to copy cert to clipboard and set to `GAS.MACOS_CERT`, 
+        #    the password should be set to `GAS.MACOS_CERT_PWD`.
+        # 4. Set the 10 chars in the parenthesis at the suffix of the cert id to `GAS.WWDRTEAMID`.
+        # 5. Set the developer's apple id to `GAS.APPLE_ID`.
+        # 6. Create an app specific password at https://appleid.apple.com/account/manage and set it to `GAS.APPLEID_APP_PWD`.
+
+        env: 
+          MACOS_CERT: ${{ secrets.MACOS_CERT }}
+          MACOS_CERT_PWD: ${{ secrets.MACOS_CERT_PWD }}
+          KEY_PWD: ${{ secrets.APPLEID_APP_PWD }}
+          APPLEID_APP_PWD: ${{ secrets.APPLEID_APP_PWD }}
+          WWDRTEAMID: ${{ secrets.WWDRTEAMID }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+        if: ${{ env.APPLE_ID != '' }}
+        run: |
+          echo "$MACOS_CERT" | base64 -d > certificate.p12
+          security create-keychain -p "$KEY_PWD" build.keychain 
+          security default-keychain -s build.keychain
+          security unlock-keychain -p "$KEY_PWD" build.keychain
+          security import certificate.p12 -k build.keychain -P "$MACOS_CERT_PWD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEY_PWD" build.keychain
+          codesign --options runtime --force --deep --sign "$WWDRTEAMID" ./${{ env.EXE_NAME }}
+
+          zip -9 ${{ env.EXE_NAME }}.zip ./${{ env.EXE_NAME }}
+          
+          xcrun notarytool store-credentials "OLG" --apple-id "$APPLE_ID" --team-id "$WWDRTEAMID" --password "$APPLEID_APP_PWD"
+          xcrun notarytool submit ${{ env.EXE_NAME }}.zip --keychain-profile "OLG" --wait
 
       - name: Upload traget bin
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
-          name: macos.zip
-          path: ./quickraw
+          name: macos.build
+          path: ./${{ env.EXE_NAME }}.zip
 
 
   Build_Linux:
-    needs: [Build_MacOS, Build_Win]
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Compile
+        run: |
+          cargo build -r --all-features --bin quickraw
+          cd target/release
+          strip ./${{ env.EXE_NAME }}
+          zip -9 ${{ env.EXE_NAME }}.zip ./${{ env.EXE_NAME }}
+
+      - name: Upload traget bin
+        uses: actions/upload-artifact@v3
+        with:
+          name: linux.build
+          path: target/release/${{ env.EXE_NAME }}.zip
+
+  Release:
+    needs: [Build_Win, Build_MacOS, Build_Linux]
+    runs-on: ubuntu-20.04
     permissions: write-all
     steps:
       - name: Check out repo
@@ -56,9 +116,8 @@ jobs:
         with:
           fetch-depth: 0
 
-      # For better tag description
       - name: Remove local nightly tag
-        run: git tag -d nightly
+        run: git tag -d nightly || true
 
       - name: Set variables
         id: vars
@@ -66,26 +125,22 @@ jobs:
           echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
           echo "::set-output name=tag::$(git describe --tags HEAD)"
 
-      - name: Compile
-        run: cargo build --release
-
-      - name: Download prev builds
+      - name: Download previous builds
         uses: actions/download-artifact@v2
 
       - name: Extract artifacts
         run: |
-          mv target/release/quickraw ./quickraw-linux
-          strip ./quickraw-linux
-          7z x *.zip
-          mv win.zip/* ./quickraw-win.exe
-          mv macos.zip/* ./quickraw-macos.zip
+          7z x *.build
+          mv win.build/* ./${{ env.EXE_NAME }}-win.exe
+          mv macos.build/* ./${{ env.EXE_NAME }}-macos.zip
+          mv linux.build/* ./${{ env.EXE_NAME }}-linux.zip
 
       - name: Get packages file name
         id: names
         run: |
-          echo "::set-output name=linux_build::quickraw-linux"
-          echo "::set-output name=win_build::quickraw-win.exe"
-          echo "::set-output name=macos_build::quickraw-macos.zip"
+          echo "::set-output name=win_build::${{ env.EXE_NAME }}-win.exe"
+          echo "::set-output name=macos_build::${{ env.EXE_NAME }}-macos.zip"
+          echo "::set-output name=linux_build::${{ env.EXE_NAME }}-linux.zip"
 
       # Publish builds
       - name: Remove nightly tag 
@@ -117,7 +172,7 @@ jobs:
           upload_url: ${{ steps.nightly_prerelease.outputs.upload_url }}
           asset_path: ${{ steps.names.outputs.linux_build }}
           asset_name: ${{ steps.names.outputs.linux_build }}
-          asset_content_type: application/x-executable
+          asset_content_type: application/zip
 
       - name: Upload win nightly build
         uses: actions/upload-release-asset@v1
@@ -135,53 +190,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.nightly_prerelease.outputs.upload_url }}
-          asset_path: ${{ steps.names.outputs.macos_build }}
-          asset_name: ${{ steps.names.outputs.macos_build }}
-          asset_content_type: application/zip
-
-      # Create version release if there is a version tag
-      - name: Create tag release
-        if: ${{ !contains(steps.vars.outputs.tag, '-') }}
-        id: tag_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ steps.vars.outputs.tag }}
-          release_name: Release ${{ steps.vars.outputs.tag }}
-          prerelease: false
-          draft: false
-          body: Automated builds for version releases via Github Actions
-          
-      - name: Upload linux version build
-        if: ${{ !contains(steps.vars.outputs.tag, '-') }}
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.tag_release.outputs.upload_url }}
-          asset_path: ${{ steps.names.outputs.linux_build }}
-          asset_name: ${{ steps.names.outputs.linux_build }}
-          asset_content_type: application/x-executable
-
-      - name: Upload win version build
-        if: ${{ !contains(steps.vars.outputs.tag, '-') }}
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.tag_release.outputs.upload_url }}
-          asset_path: ${{ steps.names.outputs.win_build }}
-          asset_name: ${{ steps.names.outputs.win_build }}
-          asset_content_type: application/octet-stream
-
-      - name: Upload macos version build
-        if: ${{ !contains(steps.vars.outputs.tag, '-') }}
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.tag_release.outputs.upload_url }}
           asset_path: ${{ steps.names.outputs.macos_build }}
           asset_name: ${{ steps.names.outputs.macos_build }}
           asset_content_type: application/zip

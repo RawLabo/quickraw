@@ -1,6 +1,6 @@
 use anyhow::{Context, Result};
 use core::panic;
-use quickraw::{color, DemosaicingMethod, Export, ExportError, Input, Output, OutputType, BENCH_FLAG};
+use quickraw::{color, DemosaicingMethod, export::Export, ExportError, Input, Output, OutputType, BENCH_FLAG};
 use rayon::prelude::*;
 use std::{env, fs, mem, path::Path};
 

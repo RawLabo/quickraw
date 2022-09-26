@@ -13,6 +13,13 @@ use crate::{
     tiff::{RawInfoError, ValueError},
 };
 
+pub struct Export {
+    raw_job: RawJob,
+    color_conversion: ColorConversion,
+    raw_image: RawImage,
+    output: Output,
+}
+
 trait SaveWithQuality {
     fn save_with_quality(&self, path: &str, quality: u8) -> ImageResult<()>;
 }

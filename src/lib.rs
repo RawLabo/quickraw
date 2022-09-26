@@ -1,7 +1,6 @@
 use thiserror::Error;
 
 use maker::RawDecoder;
-use raw::RawImage;
 
 pub mod color;
 pub mod raw_job;
@@ -11,6 +10,7 @@ pub mod maker;
 pub mod raw;
 pub mod tiff;
 
+#[cfg(feature = "image")]
 pub mod export;
 
 pub const BENCH_FLAG: &'static str = "QUICKRAW_BENCH";
@@ -54,12 +54,6 @@ pub struct Output {
     pub output_type: OutputType,
     pub auto_crop: bool,
     pub auto_rotate: bool
-}
-pub struct Export {
-    raw_job: RawJob,
-    color_conversion: ColorConversion,
-    raw_image: RawImage,
-    output: Output,
 }
 
 #[derive(Error, Debug)]

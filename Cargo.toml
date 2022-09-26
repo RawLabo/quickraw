@@ -2,15 +2,24 @@
 name = "quickraw"
 version = "0.1.1"
 edition = "2021"
+description = "A rust library to handle camera raw files"
 
 [dependencies]
-attrs = {path="attrs"}
-anyhow = "1"
-image = "0.23"
-thiserror = "1.0"
-phf = {version = "0.10", features = ["macros"]}
-rayon = "1.5"
+attrs = { path = "attrs" }
+thiserror = "1"
+once_cell = "1"
+phf = { version = "0.10", features = ["macros"] }
+quickexif = "0.1"
+
+# only for cli binary usage
+anyhow = { version = "1", optional = true }
+image = { version = "0.23", optional = true }
+rayon = { version = "1.5", optional = true }
+
+[[bin]]
+name = "quickraw"
+required-features = ["anyhow", "image", "rayon"]
 
 [profile.release]
 codegen-units = 1
-lto="fat"
+lto = "fat"
