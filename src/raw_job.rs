@@ -16,7 +16,7 @@ impl RawJob {
         f.read(&mut buffer)
             .map_err(|_| RawFileReadingError::FileContentReadingError(path.to_owned()))?;
 
-        if &buffer[..4] == [0x46, 0x55, 0x4a, 0x49] {
+        if buffer[..4] == [0x46, 0x55, 0x4a, 0x49] {
             // fuji raw fix
             Ok(buffer.drain(148..).collect())
         } else {
@@ -48,11 +48,11 @@ impl RawJob {
         Ok(raw_job)
     }
 
-    pub fn get_thumbnail<'a>(
-        buffer: &'a [u8],
-    ) -> Result<(&'a [u8], Orientation), RawFileReadingError> {
+    pub fn get_thumbnail(
+        buffer: &[u8],
+    ) -> Result<(&[u8], Orientation), RawFileReadingError> {
         let rule = &maker::utility::BASIC_INFO_RULE;
-        let decoder_select_info = quickexif::parse(&buffer, rule)?;
+        let decoder_select_info = quickexif::parse(buffer, rule)?;
 
         let (decoder, _) = selector::select_decoder(buffer, decoder_select_info, true)?;
 

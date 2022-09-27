@@ -67,9 +67,9 @@ impl Export {
         })
     }
 
-    pub fn export_thumbnail_data<'a>(
-        buffer: &'a [u8],
-    ) -> Result<(&'a [u8], Orientation), ExportError> {
+    pub fn export_thumbnail_data(
+        buffer: &[u8],
+    ) -> Result<(&[u8], Orientation), ExportError> {
         let (thumbnail, orientation) = RawJob::get_thumbnail(buffer)?;
         Ok((thumbnail, orientation))
     }

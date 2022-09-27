@@ -5,6 +5,7 @@ use decompressors::*;
 
 mod decompressors;
 
+#[allow(clippy::upper_case_acronyms)]
 enum Marker {
     Stuff = 0x00,
     SOF3 = 0xc3, // lossless
@@ -51,7 +52,7 @@ impl SOFInfo {
             cps: 0,
             precision: 0,
             components: Vec::new(),
-            csfix: csfix,
+            csfix,
         }
     }
 
@@ -78,7 +79,7 @@ impl SOFInfo {
             input.get_u8(); // Skip info about quantized
 
             self.components.push(JpegComponentInfo {
-                id: id,
+                id,
                 // index: i,
                 dc_tbl_num: 0,
                 super_v: subs & 0xf,
@@ -140,8 +141,8 @@ impl<'a> LjpegDecompressor<'a> {
 
         let mut sof = SOFInfo::empty(csfix);
         let mut dht_init = [false; 4];
-        let mut dht_bits = [[0 as u32; 17]; 4];
-        let mut dht_huffval = [[0 as u32; 256]; 4];
+        let mut dht_bits = [[0u32; 17]; 4];
+        let mut dht_huffval = [[0u32; 256]; 4];
         let pred;
         let pt;
         loop {
@@ -181,10 +182,10 @@ impl<'a> LjpegDecompressor<'a> {
         let offset = input.get_pos();
         Ok(LjpegDecompressor {
             buffer: &src[offset..],
-            sof: sof,
+            sof,
             predictor: pred,
             point_transform: pt,
-            dhts: dhts,
+            dhts,
         })
     }
 
@@ -274,10 +275,10 @@ impl<'a> LjpegDecompressor<'a> {
                 2 => decode_ljpeg_2components(self, out, x, stripwidth, width, height),
                 3 => decode_ljpeg_3components(self, out, x, stripwidth, width, height),
                 4 => decode_ljpeg_4components(self, out, width, height),
-                c => return Err(DecodingError::LJpegComponentFilesNotSupported(c)),
+                c => Err(DecodingError::LJpegComponentFilesNotSupported(c)),
             },
             8 => decode_hasselblad(self, out, width),
-            p => return Err(DecodingError::LJpegPredictorNotSupported(p)),
+            p => Err(DecodingError::LJpegPredictorNotSupported(p)),
         }
     }
 

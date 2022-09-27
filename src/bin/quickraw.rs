@@ -1,6 +1,8 @@
 use anyhow::{Context, Result};
 use core::panic;
-use quickraw::{color, DemosaicingMethod, export::Export, ExportError, Input, Output, OutputType, BENCH_FLAG};
+use quickraw::{
+    data, export::Export, DemosaicingMethod, ExportError, Input, Output, OutputType, BENCH_FLAG,
+};
 use rayon::prelude::*;
 use std::{env, fs, mem, path::Path};
 
@@ -51,10 +53,7 @@ fn option_handler<'a>(option_slice: &[&'a str], result: &mut Options<'a>) {
             }
         }
         ["--jpeg-quality", q] | ["-jq", q] => {
-            result.jpeg_quality = match q.parse::<u8>() {
-                Ok(x) => x,
-                Err(_) => 92,
-            };
+            result.jpeg_quality = q.parse::<u8>().unwrap_or(92);
         }
         ["--bench"] | ["-b"] => {
             env::set_var(BENCH_FLAG, "1");
@@ -68,9 +67,9 @@ fn option_handler<'a>(option_slice: &[&'a str], result: &mut Options<'a>) {
         }
         ["--color-space", color_space] | ["-cs", color_space] => {
             result.color_space = match *color_space {
-                "raw" => color::XYZ2RAW,
-                "srgb" => color::XYZ2SRGB,
-                "adobergb" => color::XYZ2ADOBE_RGB,
+                "raw" => data::XYZ2RAW,
+                "srgb" => data::XYZ2SRGB,
+                "adobergb" => data::XYZ2ADOBE_RGB,
                 matrix => {
                     let c = matrix
                         .split(',')
@@ -131,7 +130,11 @@ fn merge_path(path: &str, output_dir: Option<&str>) -> String {
     }
 }
 
-fn merge_output_type(path: &str, output_dir: Option<&str>, prev_output_type: OutputType) -> OutputType {
+fn merge_output_type(
+    path: &str,
+    output_dir: Option<&str>,
+    prev_output_type: OutputType,
+) -> OutputType {
     let merged_path = merge_path(path, output_dir);
 
     match &prev_output_type {
@@ -186,7 +189,7 @@ fn export_by_file(file: &str, options: Options) -> Result<()> {
 }
 
 fn export_by_options(mut options: Options) -> Result<()> {
-    let inputs = mem::replace(&mut options.inputs, vec![]);
+    let inputs = mem::take(&mut options.inputs);
 
     match inputs.as_slice() {
         [file] => {
@@ -239,7 +242,7 @@ fn main() -> Result<()> {
                 output_type: OutputType::Image16(".tif".to_owned()),
                 jpeg_quality: 92,
                 demosaicing_method: DemosaicingMethod::Linear,
-                color_space: color::XYZ2SRGB,
+                color_space: data::XYZ2SRGB,
                 gamma: [0.45, 4.5],
                 auto_crop: false,
                 auto_rotate: false,

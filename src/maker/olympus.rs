@@ -123,7 +123,7 @@ fn fast_inc_get<T: Copy>(vec: &[T], index: &mut usize) -> T {
     }
 }
 #[inline(always)]
-fn fast_inc_set<T: Copy>(vec: &mut Vec<T>, index: &mut usize, value: T) {
+fn fast_inc_set<T: Copy>(vec: &mut [T], index: &mut usize, value: T) {
     unsafe {
         *vec.get_unchecked_mut(*index) = value;
         *index += 1;
@@ -154,7 +154,7 @@ fn load_compressed_raw(buf: &[u8], width: usize, height: usize) -> Result<Vec<u1
                 nbits = cmp::min(nbits, 16);
                 let b = pump.peek_ibits(15);
 
-                let sign: i32 = (b >> 14) * -1;
+                let sign: i32 = -(b >> 14);
                 let low: i32 = (b >> 12) & 3;
                 let mut high: i32 = BITTABLE[(b & 4095) as usize];
 
@@ -201,12 +201,10 @@ fn load_compressed_raw(buf: &[u8], width: usize, height: usize) -> Result<Vec<u1
                         } else {
                             (left[s] + up) >> 1
                         }
+                    } else if left_minus_nw.abs() > up_minus_nw.abs() {
+                        left[s]
                     } else {
-                        if left_minus_nw.abs() > up_minus_nw.abs() {
-                            left[s]
-                        } else {
-                            up
-                        }
+                        up
                     };
 
                     left[s] = pred + ((diff << 2) | low);

@@ -170,7 +170,7 @@ impl RawDecoder for General {
         };
 
         if image.len() != width * height {
-            Err(DecodingError::InvalidDecodedImageSize(image.len(), width * height).into())
+            Err(DecodingError::InvalidDecodedImageSize(image.len(), width * height))
         } else {
             Ok(image)
         }
@@ -278,13 +278,13 @@ fn load_raw(
     let mut pred_up2: [i32; 2] = [stream.get_u16() as i32, stream.get_u16() as i32];
 
     // Get the linearization curve
-    let mut points = [0 as u16; 1 << 16];
-    for i in 0..points.len() {
-        points[i] = i as u16;
+    let mut points = [0u16; 1 << 16];
+    for (i, point) in points.iter_mut().enumerate() {
+        *point = i as u16;
     }
     let mut max = 1 << bps;
     let csize = stream.get_u16() as usize;
-    let mut split = 0 as usize;
+    let mut split = 0usize;
     let step = if csize > 1 { max / (csize - 1) } else { 0 };
     if v0 == 68 && v1 == 32 && step > 0 {
         for i in 0..csize {
@@ -297,8 +297,8 @@ fn load_raw(
         }
         split = meta.u16(is_le, 562) as usize;
     } else if v0 != 70 && csize <= 0x4001 {
-        for i in 0..csize {
-            points[i] = stream.get_u16();
+        for point in points.iter_mut().take(csize) {
+            *point = stream.get_u16();
         }
         max = csize;
     }
@@ -321,7 +321,7 @@ fn load_raw(
                 pred_left1 += htable.huff_decode(&mut pump);
                 pred_left2 += htable.huff_decode(&mut pump);
             }
-            out[row * width + col + 0] = curve.dither(clampbits(pred_left1, bps), &mut random);
+            out[row * width + col] = curve.dither(clampbits(pred_left1, bps), &mut random);
             out[row * width + col + 1] = curve.dither(clampbits(pred_left2, bps), &mut random);
         }
     }

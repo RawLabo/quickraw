@@ -134,7 +134,7 @@ impl RawDecoder for General {
         };
 
         if image.len() != width * height {
-            Err(DecodingError::InvalidDecodedImageSize(image.len(), width * height).into())
+            Err(DecodingError::InvalidDecodedImageSize(image.len(), width * height))
         } else {
             Ok(image)
         }
@@ -153,7 +153,7 @@ fn gen_curve_lut(tone_curve: &[u16]) -> LookupTable {
         curve[i + 1] = ((tone_curve[i] as u32 >> 2) & 0xfff) as usize;
     }
 
-    let mut table = vec![0 as u16; curve[5] + 1];
+    let mut table = vec![0u16; curve[5] + 1];
     for i in 0..5 {
         for j in (curve[i] + 1)..(curve[i + 1] + 1) {
             table[j] = table[(j - 1)] + (1 << i);

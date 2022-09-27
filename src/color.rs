@@ -1,36 +1,6 @@
 use super::{*, utility::*};
 use std::cmp;
 
-// http://www.brucelindbloom.com/index.html?Eqn_RGB_to_XYZ.html
-pub const XYZ2ADOBE_RGB: [f32; 9] = [
-    1.8037626,
-    -0.49918914,
-    -0.3045735,
-    -1.0221082,
-    1.9782866,
-    0.04382154,
-    0.014769779,
-    -0.13003181,
-    1.115262,
-];
-
-pub const XYZ2SRGB: [f32; 9] = [
-    2.689655,
-    -1.275862,
-    -0.4137931,
-    -1.0221082,
-    1.9782866,
-    0.04382154,
-    0.061224457,
-    -0.22448978,
-    1.1632653,
-];
-
-pub const XYZ2RAW: [f32; 9] = [1.0, 0., 0., 0., 1.0, 0., 0., 0., 1.0];
-
-pub const GAMMA_LINEAR: [f32; 2] = [1.0, 0.0];
-pub const GAMMA_SRGB: [f32; 2] = [0.45, 4.5];
-
 impl ColorConversion {
     const CLIP_LIMIT_I32: i32 = 65535;
     const CLIP_RANGE : (i32, i32) = (0, Self::CLIP_LIMIT_I32);

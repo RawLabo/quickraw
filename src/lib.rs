@@ -2,6 +2,8 @@ use thiserror::Error;
 
 use maker::RawDecoder;
 
+pub mod data;
+
 pub mod color;
 pub mod raw_job;
 mod utility;
@@ -12,7 +14,7 @@ pub mod raw;
 #[cfg(feature = "image")]
 pub mod export;
 
-pub const BENCH_FLAG: &'static str = "QUICKRAW_BENCH";
+pub const BENCH_FLAG: &str = "QUICKRAW_BENCH";
 pub const BIT_SHIFT: u32 = 13u32;
 
 #[derive(Debug)]

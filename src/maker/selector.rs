@@ -1,5 +1,5 @@
 use crate::RawFileReadingError;
-
+use super::super::data;
 use super::*;
 
 pub fn select_decoder(
@@ -22,13 +22,13 @@ pub fn select_decoder(
         [0f32; 9]
     } else {
         match dng_version {
-            None => *cam_matrix::CAM_XYZ_MATRIX
+            None => *data::CAM_XYZ_MATRIX
                 .get(model.as_str())
                 .ok_or_else(|| RawFileReadingError::ModelIsNotSupportedYet(model.clone()))?,
             Some(_) => {
                 let mut matrix = [0f32; 9];
-                for i in 0..9 {
-                    matrix[i] = basic_info.f64(format!("c{}", i.to_string()).as_str())? as f32;
+                for (i, item) in matrix.iter_mut().enumerate() {
+                    *item = basic_info.f64(format!("c{}", i).as_str())? as f32;
                 }
                 utility::matrix3_inverse(&mut matrix);
                 utility::matrix3_normalize(&mut matrix);

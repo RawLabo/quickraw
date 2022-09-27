@@ -5,7 +5,6 @@ pub mod selector;
 pub mod utility;
 
 pub mod adobe;
-mod cam_matrix;
 mod decode_utility;
 pub mod fujifilm;
 pub mod nikon;

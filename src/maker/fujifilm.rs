@@ -103,7 +103,7 @@ impl RawDecoder for General {
             .collect();
 
         if image.len() != width * height {
-            Err(DecodingError::InvalidDecodedImageSize(image.len(), width * height).into())
+            Err(DecodingError::InvalidDecodedImageSize(image.len(), width * height))
         } else {
             Ok(image)
         }
