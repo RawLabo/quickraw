@@ -1,4 +1,4 @@
-use crate::tiff::utility::GetNumFromBytes;
+use super::super::utility::GetNumFromBytes;
 
 #[derive(Debug, Copy, Clone)]
 pub struct BitPumpMSB<'a> {

@@ -2,11 +2,12 @@ use std::{fs::File, io::Read};
 
 use crate::raw::Orientation;
 
-use super::{maker::*, tiff::Parser, *};
+use super::{maker::*, *};
 
 impl RawJob {
     pub fn get_buffer_from_file(path: &str) -> Result<Vec<u8>, RawFileReadingError> {
-        let mut f = File::open(path).map_err(|_| RawFileReadingError::FileNotExisted(path.to_owned()))?;
+        let mut f =
+            File::open(path).map_err(|_| RawFileReadingError::FileNotExisted(path.to_owned()))?;
         let len = f
             .metadata()
             .map_err(|_| RawFileReadingError::FileMetadataReadingError(path.to_owned()))?
@@ -30,10 +31,11 @@ impl RawJob {
     }
 
     pub fn new_from_buffer(buffer: Vec<u8>) -> Result<RawJob, RawFileReadingError> {
-        let task = maker::utility::basic_info_task();
-        let decoder_select_info = Parser::get_raw_info(&buffer, &task)?;
+        let rule = &maker::utility::BASIC_INFO_RULE;
+        let decoder_select_info = quickexif::parse(&buffer, rule)?;
 
-        let (decoder, cam_matrix) = selector::select_decoder(buffer.as_slice(), decoder_select_info, false)?;
+        let (decoder, cam_matrix) =
+            selector::select_decoder(buffer.as_slice(), decoder_select_info, false)?;
         let white_balance = decoder.get_white_balance()?;
 
         let raw_job = RawJob {
@@ -46,9 +48,11 @@ impl RawJob {
         Ok(raw_job)
     }
 
-    pub fn get_thumbnail<'a>(buffer: &'a [u8]) -> Result<(&'a [u8], Orientation), RawFileReadingError> {
-        let task = maker::utility::basic_info_task();
-        let decoder_select_info = Parser::get_raw_info(&buffer, &task)?;
+    pub fn get_thumbnail<'a>(
+        buffer: &'a [u8],
+    ) -> Result<(&'a [u8], Orientation), RawFileReadingError> {
+        let rule = &maker::utility::BASIC_INFO_RULE;
+        let decoder_select_info = quickexif::parse(&buffer, rule)?;
 
         let (decoder, _) = selector::select_decoder(buffer, decoder_select_info, true)?;
 

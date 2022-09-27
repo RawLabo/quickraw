@@ -4,14 +4,12 @@ use std::{
 };
 
 use image::{
-    codecs::jpeg, imageops, ColorType, EncodableLayout, ImageBuffer, ImageEncoder, ImageFormat, ImageResult, Rgb,
+    codecs::jpeg, imageops, ColorType, EncodableLayout, ImageBuffer, ImageEncoder, ImageFormat,
+    ImageResult, Rgb,
 };
 
 use super::*;
-use crate::{
-    raw::{Orientation, RawImage},
-    tiff::{RawInfoError, ValueError},
-};
+use crate::raw::{Orientation, RawImage};
 
 pub struct Export {
     raw_job: RawJob,
@@ -69,11 +67,16 @@ impl Export {
         })
     }
 
-    pub fn export_thumbnail_data<'a>(buffer: &'a [u8]) -> Result<(&'a [u8], Orientation), ExportError> {
+    pub fn export_thumbnail_data<'a>(
+        buffer: &'a [u8],
+    ) -> Result<(&'a [u8], Orientation), ExportError> {
         let (thumbnail, orientation) = RawJob::get_thumbnail(buffer)?;
         Ok((thumbnail, orientation))
     }
-    pub fn export_thumbnail_to_file(input_path: &str, output_path: &str) -> Result<(), ExportError> {
+    pub fn export_thumbnail_to_file(
+        input_path: &str,
+        output_path: &str,
+    ) -> Result<(), ExportError> {
         let buffer = RawJob::get_buffer_from_file(input_path)?;
         let (thumbnail, orientation) = RawJob::get_thumbnail(buffer.as_slice())?;
 
@@ -85,8 +88,9 @@ impl Export {
                     .map_err(|_| ExportError::ErrorWhenExportingFile(output_path.to_owned()))?;
             }
             _ => {
-                let img = image::load_from_memory(thumbnail)
-                    .map_err(|_| ExportError::CannotReadThumbnail(thumbnail.len(), input_path.to_owned()))?;
+                let img = image::load_from_memory(thumbnail).map_err(|_| {
+                    ExportError::CannotReadThumbnail(thumbnail.len(), input_path.to_owned())
+                })?;
 
                 let img = match orientation {
                     Orientation::Rotate90 => imageops::rotate90(&img),
@@ -106,13 +110,19 @@ impl Export {
     #[attrs::bench(demosaicing_with_postprocess)]
     pub fn export_image_data<T>(&self, cast_fn: fn(u16) -> T) -> (Vec<T>, usize, usize) {
         match self.output.demosaicing_method {
-            DemosaicingMethod::None => self.raw_image.no_demosaic_render(&self.color_conversion, cast_fn),
-            DemosaicingMethod::SuperPixel => self.raw_image.super_pixel_render(&self.color_conversion, cast_fn),
-            DemosaicingMethod::Linear => self.raw_image.linear_render(&self.color_conversion, cast_fn),
+            DemosaicingMethod::None => self
+                .raw_image
+                .no_demosaic_render(&self.color_conversion, cast_fn),
+            DemosaicingMethod::SuperPixel => self
+                .raw_image
+                .super_pixel_render(&self.color_conversion, cast_fn),
+            DemosaicingMethod::Linear => self
+                .raw_image
+                .linear_render(&self.color_conversion, cast_fn),
         }
     }
 
-    pub fn export_exif_info(&self) -> Result<String, ValueError> {
+    pub fn export_exif_info(&self) -> Result<String, quickexif::value::Error> {
         self.raw_job.decoder.get_info().stringify_all()
     }
 
@@ -125,7 +135,7 @@ impl Export {
             .decoder
             .get_info()
             .stringify_all()
-            .map_err(|err| RawInfoError::from(err).into())
+            .map_err(|err| quickexif::parsed_info::Error::from(err).into())
     }
 
     #[attrs::bench(writing_file)]
@@ -140,7 +150,9 @@ impl Export {
     {
         let len = data.len();
         let mut image = ImageBuffer::<Rgb<T>, Vec<T>>::from_raw(width as u32, height as u32, data)
-            .ok_or_else(|| ExportError::ImageBufferError(stringify!(T).to_owned(), len, width, height))?;
+            .ok_or_else(|| {
+                ExportError::ImageBufferError(stringify!(T).to_owned(), len, width, height)
+            })?;
 
         let image = match (&self.raw_image.crop, self.output.auto_crop) {
             (Some(c), true) => imageops::crop(&mut image, c.x, c.y, c.width, c.height).to_image(),

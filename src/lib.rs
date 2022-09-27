@@ -8,7 +8,6 @@ mod utility;
 
 pub mod maker;
 pub mod raw;
-pub mod tiff;
 
 #[cfg(feature = "image")]
 pub mod export;
@@ -58,10 +57,10 @@ pub struct Output {
 
 #[derive(Error, Debug)]
 pub enum RawFileReadingError {
-    #[error("Cannot read the raw file.")]
-    RawInfoError(#[from] tiff::RawInfoError),
-    #[error("Cannot read the raw file.")]
-    TiffParsingError(#[from] tiff::ParsingError),
+    #[error("Exif parsing error.")]
+    ExifParseError(#[from] quickexif::parser::Error),
+    #[error("Exif parsed info error.")]
+    ExifParseInfoError(#[from] quickexif::parsed_info::Error),
     #[error("Cannot read the raw file.")]
     DecodingError(#[from] maker::DecodingError),
     #[error("The file '{0}' is not existed.")]

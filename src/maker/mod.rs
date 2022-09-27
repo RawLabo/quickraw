@@ -1,11 +1,6 @@
-use crate::{
-    raw::{CFAPattern, Crop, Orientation},
-    tiff::{ExifTask, ParsedRawInfo, RawInfoError},
-};
+use crate::raw::{CFAPattern, Crop, Orientation};
 use thiserror::Error;
 
-#[macro_use]
-mod macros;
 pub mod selector;
 pub mod utility;
 
@@ -19,13 +14,10 @@ pub mod panasonic;
 pub mod sony;
 
 pub trait RawDecoder {
-    fn new(info: ParsedRawInfo) -> Self
+    fn new(info: quickexif::ParsedInfo) -> Self
     where
         Self: Sized;
-    fn get_task(only_thumbnail: bool, model: String) -> ExifTask
-    where
-        Self: Sized;
-    fn get_info(&self) -> &ParsedRawInfo;
+    fn get_info(&self) -> &quickexif::ParsedInfo;
     fn get_white_balance(&self) -> Result<[i32; 3], DecodingError> {
         let info = self.get_info();
         (|| -> Result<[i32; 3], DecodingError> {
@@ -61,13 +53,16 @@ pub trait RawDecoder {
     }
 
     fn pre_process(&self, buffer: &[u8]) -> Result<Vec<u16>, DecodingError> {
-        self.inner_pre_process(buffer).map_err(|err|DecodingError::PreProcessError(Box::new(err)))
+        self.inner_pre_process(buffer)
+            .map_err(|err| DecodingError::PreProcessError(Box::new(err)))
     }
     fn get_cfa_pattern(&self) -> Result<CFAPattern, DecodingError> {
-        self.inner_get_cfa_pattern().map_err(|err|DecodingError::GetCFAPatternError(Box::new(err)))
+        self.inner_get_cfa_pattern()
+            .map_err(|err| DecodingError::GetCFAPatternError(Box::new(err)))
     }
     fn get_thumbnail<'a>(&self, buffer: &'a [u8]) -> Result<&'a [u8], DecodingError> {
-        self.inner_get_thumbnail(buffer).map_err(|err|DecodingError::GetThumbnailError(Box::new(err)))
+        self.inner_get_thumbnail(buffer)
+            .map_err(|err| DecodingError::GetThumbnailError(Box::new(err)))
     }
 
     fn inner_pre_process(&self, buffer: &[u8]) -> Result<Vec<u16>, DecodingError>;
@@ -88,7 +83,7 @@ pub trait RawDecoder {
 #[derive(Error, Debug)]
 pub enum DecodingError {
     #[error("Decoding error.")]
-    RawInfoError(#[from] RawInfoError),
+    RawInfoError(#[from] quickexif::parsed_info::Error),
     #[error("Pre process error. This may caused by a decoding issue.")]
     PreProcessError(#[source] Box<DecodingError>),
     #[error("Cannot get the white balance of the raw file.")]

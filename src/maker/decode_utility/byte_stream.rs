@@ -1,4 +1,4 @@
-use crate::tiff::utility::GetNumFromBytes;
+use super::super::utility::GetNumFromBytes;
 
 use super::DecodingError;
 
