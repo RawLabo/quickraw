@@ -12,7 +12,6 @@ use super::*;
 use crate::raw::{Orientation, RawImage};
 
 pub struct Export {
-    raw_job: RawJob,
     color_conversion: ColorConversion,
     raw_image: RawImage,
     output: Output,
@@ -60,14 +59,13 @@ impl Export {
         let raw_image = RawImage::new(&raw_job)?;
 
         Ok(Export {
-            raw_job,
             color_conversion,
             raw_image,
             output,
         })
     }
 
-    fn export_thumbnail_data(
+    fn _export_thumbnail_data(
         buffer: &[u8],
     ) -> Result<(&[u8], Orientation), ExportError> {
         let (thumbnail, orientation) = RawJob::get_thumbnail(buffer)?;
@@ -120,10 +118,6 @@ impl Export {
                 .raw_image
                 .linear_render(&self.color_conversion, cast_fn),
         }
-    }
-
-    fn export_exif_info(&self) -> Result<String, quickexif::value::Error> {
-        self.raw_job.decoder.get_info().stringify_all()
     }
 
     pub fn export_exif_info_directly(input: Input) -> Result<String, RawFileReadingError> {

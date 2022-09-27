@@ -3,14 +3,6 @@ mod raw_image;
 mod renderer;
 
 #[derive(Debug)]
-enum PointRGB {
-    R,
-    G1, // right to red pixel
-    G2, // left to blue pixel
-    B,
-}
-
-#[derive(Debug)]
 pub(super) struct PixelInfo {
     i: usize,
     v: i32,

@@ -116,7 +116,7 @@ pub(super) fn to_12bit_iter(buffer: &[u8], is_le: bool) -> impl Iterator<Item = 
     buffer.chunks_exact(2).map(move |bytes| bytes.u16(is_le, 0) & 0x0fff)
 }
 #[inline(always)]
-pub(super) fn to_12bit_left_aligned_iter(buffer: &[u8], is_le: bool) -> impl Iterator<Item = u16> + '_ {
+pub(super) fn _to_12bit_left_aligned_iter(buffer: &[u8], is_le: bool) -> impl Iterator<Item = u16> + '_ {
     buffer.chunks_exact(2).map(move |bytes| bytes.u16(is_le, 0) >> 4)
 }
 #[inline(always)]
