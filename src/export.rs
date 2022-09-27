@@ -44,10 +44,10 @@ where
 }
 
 impl Export {
-    pub fn cast_identity(x: u16) -> u16 {
+    fn cast_identity(x: u16) -> u16 {
         x
     }
-    pub fn cast_u16_u8(x: u16) -> u8 {
+    fn cast_u16_u8(x: u16) -> u8 {
         (x / 256) as u8
     }
     pub fn new(input: Input, output: Output) -> Result<Self, RawFileReadingError> {
@@ -67,7 +67,7 @@ impl Export {
         })
     }
 
-    pub fn export_thumbnail_data(
+    fn export_thumbnail_data(
         buffer: &[u8],
     ) -> Result<(&[u8], Orientation), ExportError> {
         let (thumbnail, orientation) = RawJob::get_thumbnail(buffer)?;
@@ -108,7 +108,7 @@ impl Export {
     }
 
     #[attrs::bench(demosaicing_with_postprocess)]
-    pub fn export_image_data<T>(&self, cast_fn: fn(u16) -> T) -> (Vec<T>, usize, usize) {
+    fn export_image_data<T>(&self, cast_fn: fn(u16) -> T) -> (Vec<T>, usize, usize) {
         match self.output.demosaicing_method {
             DemosaicingMethod::None => self
                 .raw_image
@@ -122,7 +122,7 @@ impl Export {
         }
     }
 
-    pub fn export_exif_info(&self) -> Result<String, quickexif::value::Error> {
+    fn export_exif_info(&self) -> Result<String, quickexif::value::Error> {
         self.raw_job.decoder.get_info().stringify_all()
     }
 

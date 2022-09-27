@@ -4,28 +4,31 @@ use maker::RawDecoder;
 
 pub mod data;
 
-pub mod color;
-pub mod raw_job;
+mod color;
+mod raw_job;
 mod utility;
 
-pub mod maker;
-pub mod raw;
+mod maker;
+mod raw;
 
 #[cfg(feature = "image")]
 pub mod export;
 
+#[cfg(feature = "image")]
+pub use export::Export;
+
 pub const BENCH_FLAG: &str = "QUICKRAW_BENCH";
-pub const BIT_SHIFT: u32 = 13u32;
+const BIT_SHIFT: u32 = 13u32;
 
 #[derive(Debug)]
-pub struct ColorConversion {
+struct ColorConversion {
     white_balance: [i32; 3],
-    pub gamma_lut: [u16; 65536],
+    gamma_lut: [u16; 65536],
     color_space: [i32; 9],
 }
-pub struct RawJob {
-    pub file_buffer: Vec<u8>,
-    pub decoder: Box<dyn RawDecoder>,
+struct RawJob {
+    file_buffer: Vec<u8>,
+    decoder: Box<dyn RawDecoder>,
     white_balance: [i32; 3],
     cam_matrix: [f32; 9],
 }
@@ -49,14 +52,32 @@ pub enum Input<'a> {
 }
 #[derive(Clone)]
 pub struct Output {
-    pub demosaicing_method: DemosaicingMethod,
-    pub color_space: [f32; 9],
-    pub gamma: [f32; 2],
-    pub output_type: OutputType,
-    pub auto_crop: bool,
-    pub auto_rotate: bool
+    demosaicing_method: DemosaicingMethod,
+    color_space: [f32; 9],
+    gamma: [f32; 2],
+    output_type: OutputType,
+    auto_crop: bool,
+    auto_rotate: bool,
 }
-
+impl Output {
+    pub fn new(
+        demosaicing_method: DemosaicingMethod,
+        color_space: [f32; 9],
+        gamma: [f32; 2],
+        output_type: OutputType,
+        auto_crop: bool,
+        auto_rotate: bool,
+    ) -> Output {
+        Output {
+            demosaicing_method,
+            color_space,
+            gamma,
+            output_type,
+            auto_crop,
+            auto_rotate,
+        }
+    }
+}
 #[derive(Error, Debug)]
 pub enum RawFileReadingError {
     #[error("Exif parsing error.")]
@@ -92,5 +113,5 @@ pub enum ExportError {
     #[error("The {0} image data(len:{1}, width:{2}, height:{3}) is invalid for ImageBuffer.")]
     ImageBufferError(String, usize, usize, usize),
     #[error("Cannot understand the thumbnail image data(len: {0}) for the file: '{1}'")]
-    CannotReadThumbnail(usize, String)
+    CannotReadThumbnail(usize, String),
 }

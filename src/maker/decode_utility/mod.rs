@@ -1,13 +1,13 @@
 use thiserror::Error;
 
-pub mod huffman;
-pub mod bit_pump;
-pub mod byte_stream;
-pub mod lookup_table;
-pub mod ljpeg;
+pub(in super::super) mod huffman;
+pub(in super::super) mod bit_pump;
+pub(in super::super) mod byte_stream;
+pub(in super::super) mod lookup_table;
+pub(in super::super) mod ljpeg;
 
 #[derive(Error, Debug)]
-pub enum DecodingError {
+pub(in super::super) enum DecodingError {
     #[error("No marker found inside rest of buffer.")]
     ByteStreamNoMarkerFound,
     #[error("LJPEGDecompressor trying to decode {0}x{1} into {2}x{3} error.")]

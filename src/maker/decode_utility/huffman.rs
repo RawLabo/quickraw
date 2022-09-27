@@ -3,20 +3,20 @@ use super::bit_pump::BitPump;
 
 const DECODE_CACHE_BITS: u32 = 13;
 
-pub struct HuffTable {
+pub(in super::super) struct HuffTable {
   // These two fields directly represent the contents of a JPEG DHT marker
-  pub bits: [u32;17],
-  pub huffval: [u32;256],
+  pub(in super::super) bits: [u32;17],
+  pub(in super::super) huffval: [u32;256],
 
   // Represent the weird shifts that are needed for some NEF files
-  pub shiftval: [u32;256],
+  pub(in super::super) shiftval: [u32;256],
 
   // Enable the workaround for 16 bit decodes in DNG that need to consume those
   // bits instead of the value being implied
-  pub dng_bug: bool,
+  pub(in super::super) dng_bug: bool,
 
   // In CRW we only use the len code so the cache is not needed
-  pub disable_cache: bool,
+  pub(in super::super) disable_cache: bool,
 
   // The remaining fields are computed from the above to allow more
   // efficient coding and decoding and thus private
@@ -40,19 +40,19 @@ struct MockPump {
 }
 
 impl MockPump {
-  pub fn empty() -> Self {
+  pub(in super::super) fn empty() -> Self {
     MockPump {
       bits: 0,
       nbits: 0,
     }
   }
 
-  pub fn set(&mut self, bits: u32, nbits: u32) {
+  pub(in super::super) fn set(&mut self, bits: u32, nbits: u32) {
     self.bits = (bits as u64) << 32;
     self.nbits = nbits + 32;
   }
 
-  pub fn validbits(&self) -> i32 {
+  pub(in super::super) fn validbits(&self) -> i32 {
     self.nbits as i32 - 32
   }
 }
@@ -69,7 +69,7 @@ impl BitPump for MockPump {
 }
 
 impl HuffTable {
-  pub fn empty() -> HuffTable {
+  pub(in super::super) fn empty() -> HuffTable {
     HuffTable {
       bits: [0;17],
       huffval: [0;256],
@@ -84,7 +84,7 @@ impl HuffTable {
     }
   }
 
-  pub fn new(bits: [u32;17], huffval: [u32;256], dng_bug: bool) -> HuffTable {
+  pub(in super::super) fn new(bits: [u32;17], huffval: [u32;256], dng_bug: bool) -> HuffTable {
     let mut tbl = HuffTable {
       bits,
       huffval,
@@ -101,7 +101,7 @@ impl HuffTable {
     tbl
   }
 
-  pub fn initialize(&mut self) {
+  pub(in super::super) fn initialize(&mut self) {
     // Find out the max code length and allocate a table with that size
     self.nbits = 16;
     for i in 0..16 {
@@ -147,7 +147,7 @@ impl HuffTable {
   }
 
   #[inline(always)]
-  pub fn huff_decode(&self, pump: &mut dyn BitPump) -> i32 {
+  pub(in super::super) fn huff_decode(&self, pump: &mut dyn BitPump) -> i32 {
     let code = pump.peek_bits(DECODE_CACHE_BITS) as usize;
     if let Some((bits,decode)) = self.decodecache[code] {
       pump.consume_bits(bits as u32);
@@ -159,13 +159,13 @@ impl HuffTable {
   }
 
   #[inline(always)]
-  pub fn huff_decode_slow(&self, pump: &mut dyn BitPump) -> (u8,i32) {
+  pub(in super::super) fn huff_decode_slow(&self, pump: &mut dyn BitPump) -> (u8,i32) {
     let len = self.huff_len(pump);
     (len.0+len.1, self.huff_diff(pump, len))
   }
 
   #[inline(always)]
-  pub fn huff_len(&self, pump: &mut dyn BitPump) -> (u8,u8,u8) {
+  pub(in super::super) fn huff_len(&self, pump: &mut dyn BitPump) -> (u8,u8,u8) {
     let code = pump.peek_bits(self.nbits) as usize;
     let (bits, len, shift) = self.hufftable[code];
     pump.consume_bits(bits as u32);
@@ -173,7 +173,7 @@ impl HuffTable {
   }
 
   // #[inline(always)]
-  // pub fn huff_get_bits(&self, pump: &mut dyn BitPump) -> u32 {
+  // pub(in super::super) fn huff_get_bits(&self, pump: &mut dyn BitPump) -> u32 {
   //   let code = pump.peek_bits(self.nbits) as usize;
   //   let (bits, len, _) = self.hufftable[code];
   //   pump.consume_bits(bits as u32);
@@ -181,7 +181,7 @@ impl HuffTable {
   // }
 
   #[inline(always)]
-  pub fn huff_diff(&self, pump: &mut dyn BitPump, input: (u8,u8,u8)) -> i32 {
+  pub(in super::super) fn huff_diff(&self, pump: &mut dyn BitPump, input: (u8,u8,u8)) -> i32 {
     let (_, len, shift) = input;
 
     match len {

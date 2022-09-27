@@ -1,6 +1,6 @@
 use super::{super::bit_pump::*, super::DecodingError, *};
 
-pub fn decode_ljpeg_2components(
+pub(in super::super) fn decode_ljpeg_2components(
     ljpeg: &LjpegDecompressor,
     out: &mut [u16],
     x: usize,
@@ -57,7 +57,7 @@ pub fn decode_ljpeg_2components(
     Ok(())
 }
 
-pub fn decode_ljpeg_3components(
+pub(in super::super) fn decode_ljpeg_3components(
     ljpeg: &LjpegDecompressor,
     out: &mut [u16],
     x: usize,
@@ -115,7 +115,7 @@ pub fn decode_ljpeg_3components(
     Ok(())
 }
 
-pub fn decode_ljpeg_4components(
+pub(in super::super) fn decode_ljpeg_4components(
     ljpeg: &LjpegDecompressor,
     out: &mut [u16],
     width: usize,
@@ -202,7 +202,7 @@ fn set_yuv_420(
     out[pix4 + 2] = cr as u16;
 }
 
-pub fn decode_ljpeg_420(
+pub(in super::super) fn decode_ljpeg_420(
     ljpeg: &LjpegDecompressor,
     out: &mut [u16],
     width: usize,
@@ -274,7 +274,7 @@ fn set_yuv_422(
     out[pix2 + 2] = cr as u16;
 }
 
-pub fn decode_ljpeg_422(
+pub(in super::super) fn decode_ljpeg_422(
     ljpeg: &LjpegDecompressor,
     out: &mut [u16],
     width: usize,
@@ -323,7 +323,7 @@ pub fn decode_ljpeg_422(
     Ok(())
 }
 
-pub fn decode_hasselblad(
+pub(in super::super) fn decode_hasselblad(
     ljpeg: &LjpegDecompressor,
     out: &mut [u16],
     width: usize,
@@ -349,7 +349,7 @@ pub fn decode_hasselblad(
     Ok(())
 }
 
-// pub fn decode_leaf_strip(
+// pub(in super::super) fn decode_leaf_strip(
 //     src: &[u8],
 //     out: &mut [u16],
 //     width: usize,

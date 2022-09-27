@@ -29,7 +29,7 @@ impl PixelInfo {
     }
 }
 impl RawImage {
-    pub fn super_pixel_render<T>(&self, cc: &ColorConversion, cast_fn: fn(u16) -> T) -> (Vec<T>, usize, usize) {
+    pub(crate) fn super_pixel_render<T>(&self, cc: &ColorConversion, cast_fn: fn(u16) -> T) -> (Vec<T>, usize, usize) {
         let image = self.image.as_slice();
         let w = self.width;
         let h = self.height;
@@ -63,7 +63,7 @@ impl RawImage {
         (data, w / 2, h / 2)
     }
 
-    pub fn linear_render<T>(&self, cc: &ColorConversion, cast_fn: fn(u16) -> T) -> (Vec<T>, usize, usize) {
+    pub(crate) fn linear_render<T>(&self, cc: &ColorConversion, cast_fn: fn(u16) -> T) -> (Vec<T>, usize, usize) {
         let image = self.image.as_slice();
         let w = self.width;
         let h = self.height;
@@ -93,7 +93,7 @@ impl RawImage {
         (data, w, h)
     }
 
-    pub fn no_demosaic_render<T>(&self, cc: &ColorConversion, cast_fn: fn(u16) -> T) -> (Vec<T>, usize, usize) {
+    pub(crate) fn no_demosaic_render<T>(&self, cc: &ColorConversion, cast_fn: fn(u16) -> T) -> (Vec<T>, usize, usize) {
         let image = self.image.as_slice();
         let w = self.width;
         let h = self.height;

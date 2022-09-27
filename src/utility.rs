@@ -1,6 +1,7 @@
 use super::*;
+use once_cell::sync::Lazy;
 
-pub trait ArrayMulNum<const N: usize> {
+pub(super) trait ArrayMulNum<const N: usize> {
     fn mul(&self, factor: i32) -> [i32; N];
 }
 macro_rules! gen_array_mul_num_impls {
@@ -20,7 +21,7 @@ macro_rules! gen_array_mul_num_impls {
 gen_array_mul_num_impls!(f32);
 gen_array_mul_num_impls!(i32);
 
-pub fn log2(x: i32) -> u32 {
+pub(super) fn log2(x: i32) -> u32 {
     for i in 1..BIT_SHIFT {
         if (x >> i) == 1 {
             return i;
@@ -29,7 +30,7 @@ pub fn log2(x: i32) -> u32 {
     BIT_SHIFT
 }
 
-pub fn matrix3_mul(a: &[f32; 9], b: &[f32; 9]) -> [f32; 9] {
+pub(super) fn matrix3_mul(a: &[f32; 9], b: &[f32; 9]) -> [f32; 9] {
     [
         a[0] * b[0] + a[1] * b[3] + a[2] * b[6],
         a[0] * b[1] + a[1] * b[4] + a[2] * b[7],
@@ -43,7 +44,7 @@ pub fn matrix3_mul(a: &[f32; 9], b: &[f32; 9]) -> [f32; 9] {
     ]
 }
 
-pub fn gen_gamma_lut(gamma: [f32; 2]) -> [u16; 65536] {
+pub(super) fn gen_gamma_lut(gamma: [f32; 2]) -> [u16; 65536] {
     let mut gamma_map = [0u16; 65536];
     for (i, elem) in gamma_map.iter_mut().enumerate() {
         let l = i as f32 / 65535.;
@@ -56,3 +57,32 @@ pub fn gen_gamma_lut(gamma: [f32; 2]) -> [u16; 65536] {
     }
     gamma_map
 }
+
+
+pub(super) static BASIC_INFO_RULE : Lazy<quickexif::ParsingRule> = Lazy::new(|| {
+    quickexif::describe_rule!(tiff {
+        0x010f {
+            str + 0 / make
+        }
+        0x0110 {
+            str + 0 / model
+        }
+        0xc612? / dng_version
+        if dng_version ? {
+            0xc614 {
+                str + 0 / make_model
+            }
+            0xc622 {
+                r64 + 0 / c0
+                r64 + 1 / c1
+                r64 + 2 / c2
+                r64 + 3 / c3
+                r64 + 4 / c4
+                r64 + 5 / c5
+                r64 + 6 / c6
+                r64 + 7 / c7
+                r64 + 8 / c8
+            }
+        }
+    })
+});

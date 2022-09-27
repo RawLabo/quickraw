@@ -3,11 +3,11 @@ use super::*;
 use once_cell::sync::Lazy;
 use std::cmp;
 
-pub struct General {
+pub(super) struct General {
     info: quickexif::ParsedInfo,
 }
 
-pub(crate) static THUMBNAIL_RULE: Lazy<quickexif::ParsingRule> = Lazy::new(|| {
+pub(super) static THUMBNAIL_RULE: Lazy<quickexif::ParsingRule> = Lazy::new(|| {
     quickexif::describe_rule!(tiff {
         0x0112 / orientation
         0x8769 {
@@ -25,7 +25,7 @@ pub(crate) static THUMBNAIL_RULE: Lazy<quickexif::ParsingRule> = Lazy::new(|| {
     })
 });
 
-pub(crate) static IMAGE_RULE: Lazy<quickexif::ParsingRule> = Lazy::new(|| {
+pub(super) static IMAGE_RULE: Lazy<quickexif::ParsingRule> = Lazy::new(|| {
     quickexif::describe_rule!(tiff {
         0x0112 / orientation
         0x0100 / width

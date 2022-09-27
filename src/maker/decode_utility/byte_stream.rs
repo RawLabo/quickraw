@@ -3,14 +3,14 @@ use super::super::utility::GetNumFromBytes;
 use super::DecodingError;
 
 #[derive(Debug, Copy, Clone)]
-pub struct ByteStream<'a> {
+pub(in super::super) struct ByteStream<'a> {
     buffer: &'a [u8],
     pos: usize,
     is_le: bool,
 }
 
 impl<'a> ByteStream<'a> {
-    pub fn new(src: &'a [u8], is_le: bool) -> ByteStream {
+    pub(in super::super) fn new(src: &'a [u8], is_le: bool) -> ByteStream {
         ByteStream {
             buffer: src,
             pos: 0,
@@ -19,39 +19,39 @@ impl<'a> ByteStream<'a> {
     }
 
     #[inline(always)]
-    pub fn get_pos(&self) -> usize {
+    pub(in super::super) fn get_pos(&self) -> usize {
         self.pos
     }
 
     #[inline(always)]
-    pub fn peek_u8(&self) -> u8 {
+    pub(in super::super) fn peek_u8(&self) -> u8 {
         self.buffer[self.pos]
     }
     #[inline(always)]
-    pub fn get_u8(&mut self) -> u8 {
+    pub(in super::super) fn get_u8(&mut self) -> u8 {
         let val = self.peek_u8();
         self.pos += 1;
         val
     }
 
     #[inline(always)]
-    pub fn peek_u16(&self) -> u16 {
+    pub(in super::super) fn peek_u16(&self) -> u16 {
         self.buffer.u16(self.is_le, self.pos)
     }
     #[inline(always)]
-    pub fn get_u16(&mut self) -> u16 {
+    pub(in super::super) fn get_u16(&mut self) -> u16 {
         let val = self.peek_u16();
         self.pos += 2;
         val
     }
 
     #[inline(always)]
-    pub fn consume_bytes(&mut self, num: usize) {
+    pub(in super::super) fn consume_bytes(&mut self, num: usize) {
         self.pos += num
     }
 
     #[inline(always)]
-    pub fn skip_to_marker(&mut self) -> Result<usize, DecodingError> {
+    pub(in super::super) fn skip_to_marker(&mut self) -> Result<usize, DecodingError> {
         let mut skip_count = 0;
         while !(self.buffer[self.pos] == 0xFF && self.buffer[self.pos + 1] != 0 && self.buffer[self.pos + 1] != 0xFF) {
             self.pos += 1;

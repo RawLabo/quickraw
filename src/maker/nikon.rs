@@ -8,11 +8,11 @@ use super::{
     decode_utility::lookup_table::*, utility::*,
 };
 
-pub struct General {
+pub(super) struct General {
     info: quickexif::ParsedInfo,
 }
 
-pub(crate) static THUMBNAIL_RULE: Lazy<quickexif::ParsingRule> = Lazy::new(|| {
+pub(super) static THUMBNAIL_RULE: Lazy<quickexif::ParsingRule> = Lazy::new(|| {
     quickexif::describe_rule!(tiff {
         0x0112 : u16 / orientation
         0x014a {
@@ -24,7 +24,7 @@ pub(crate) static THUMBNAIL_RULE: Lazy<quickexif::ParsingRule> = Lazy::new(|| {
     })
 });
 
-pub(crate) static IMAGE_RULE: Lazy<quickexif::ParsingRule> = Lazy::new(|| {
+pub(super) static IMAGE_RULE: Lazy<quickexif::ParsingRule> = Lazy::new(|| {
     quickexif::describe_rule!(tiff {
         0x0112 : u16 / orientation
         0x8769 {
@@ -329,7 +329,7 @@ fn load_raw(
 }
 
 #[inline(always)]
-pub fn clampbits(val: i32, bits: u32) -> u16 {
+fn clampbits(val: i32, bits: u32) -> u16 {
     let max = (1 << bits) - 1;
     if val < 0 {
         0

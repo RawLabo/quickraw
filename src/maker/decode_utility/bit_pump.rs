@@ -1,7 +1,7 @@
 use super::super::utility::GetNumFromBytes;
 
 #[derive(Debug, Copy, Clone)]
-pub struct BitPumpMSB<'a> {
+pub(in super::super) struct BitPumpMSB<'a> {
     buffer: &'a [u8],
     pos: usize,
     bits: u64,
@@ -9,7 +9,7 @@ pub struct BitPumpMSB<'a> {
 }
 
 impl<'a> BitPumpMSB<'a> {
-    pub fn new(src: &'a [u8]) -> BitPumpMSB {
+    pub(in super::super) fn new(src: &'a [u8]) -> BitPumpMSB {
         BitPumpMSB {
             buffer: src,
             pos: 0,
@@ -20,7 +20,7 @@ impl<'a> BitPumpMSB<'a> {
 }
 
 #[derive(Debug, Copy, Clone)]
-pub struct BitPumpMSB32<'a> {
+pub(in super::super) struct BitPumpMSB32<'a> {
     buffer: &'a [u8],
     pos: usize,
     bits: u64,
@@ -28,7 +28,7 @@ pub struct BitPumpMSB32<'a> {
 }
 
 impl<'a> BitPumpMSB32<'a> {
-    pub fn new(src: &'a [u8]) -> BitPumpMSB32 {
+    pub(in super::super) fn new(src: &'a [u8]) -> BitPumpMSB32 {
         BitPumpMSB32 {
             buffer: src,
             pos: 0,
@@ -38,7 +38,7 @@ impl<'a> BitPumpMSB32<'a> {
     }
 
     // #[inline(always)]
-    // pub fn get_pos(&self) -> usize {
+    // pub(in super::super) fn get_pos(&self) -> usize {
     //     self.pos - ((self.nbits >> 3) as usize)
     // }
 }
@@ -62,7 +62,7 @@ impl<'a> BitPump for BitPumpMSB32<'a> {
     }
 }
 #[derive(Debug, Copy, Clone)]
-pub struct BitPumpJPEG<'a> {
+pub(in super::super) struct BitPumpJPEG<'a> {
     buffer: &'a [u8],
     pos: usize,
     bits: u64,
@@ -71,7 +71,7 @@ pub struct BitPumpJPEG<'a> {
 }
 
 impl<'a> BitPumpJPEG<'a> {
-    pub fn new(src: &'a [u8]) -> BitPumpJPEG {
+    pub(in super::super) fn new(src: &'a [u8]) -> BitPumpJPEG {
         BitPumpJPEG {
             buffer: src,
             pos: 0,
@@ -140,7 +140,7 @@ impl<'a> BitPump for BitPumpJPEG<'a> {
     }
 }
 #[derive(Debug, Copy, Clone)]
-pub struct BitPumpLSB<'a> {
+pub(in super::super) struct BitPumpLSB<'a> {
     buffer: &'a [u8],
     pos: usize,
     bits: u64,
@@ -148,7 +148,7 @@ pub struct BitPumpLSB<'a> {
 }
 
 impl<'a> BitPumpLSB<'a> {
-    pub fn new(src: &'a [u8]) -> BitPumpLSB {
+    pub(in super::super) fn new(src: &'a [u8]) -> BitPumpLSB {
         BitPumpLSB {
             buffer: src,
             pos: 0,
@@ -158,7 +158,7 @@ impl<'a> BitPumpLSB<'a> {
     }
 }
 
-pub struct BitPumpPanasonic<'a> {
+pub(in super::super) struct BitPumpPanasonic<'a> {
     buffer: &'a [u8],
     pos: usize,
     nbits: u32,
@@ -166,7 +166,7 @@ pub struct BitPumpPanasonic<'a> {
 }
 
 impl<'a> BitPumpPanasonic<'a> {
-    pub fn new(src: &'a [u8], split: bool) -> BitPumpPanasonic {
+    pub(in super::super) fn new(src: &'a [u8], split: bool) -> BitPumpPanasonic {
         BitPumpPanasonic {
             buffer: src,
             pos: 0,
@@ -176,7 +176,7 @@ impl<'a> BitPumpPanasonic<'a> {
     }
 }
 
-pub trait BitPump {
+pub(in super::super) trait BitPump {
     fn peek_bits(&mut self, num: u32) -> u32;
     fn consume_bits(&mut self, num: u32);
 

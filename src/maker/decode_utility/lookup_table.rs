@@ -1,10 +1,10 @@
 #[derive(Debug, Clone)]
-pub struct LookupTable {
+pub(in super::super) struct LookupTable {
     table: Vec<(u16, u16, u16)>,
 }
 
 impl LookupTable {
-    pub fn new(table: &[u16]) -> LookupTable {
+    pub(in super::super) fn new(table: &[u16]) -> LookupTable {
         let mut tbl = vec![(0, 0, 0); table.len()];
         for i in 0..table.len() {
             let center = table[i];
@@ -21,13 +21,13 @@ impl LookupTable {
         LookupTable { table: tbl }
     }
 
-    //  pub fn lookup(&self, value: u16) -> u16 {
+    //  pub(in super::super) fn lookup(&self, value: u16) -> u16 {
     //    let (val, _, _) = self.table[value as usize];
     //    val
     //  }
 
     #[inline(always)]
-    pub fn dither(&self, value: u16, rand: &mut u32) -> u16 {
+    pub(in super::super) fn dither(&self, value: u16, rand: &mut u32) -> u16 {
         let (_, sbase, sdelta) = self.table[value as usize];
         let base = sbase as u32;
         let delta = sdelta as u32;

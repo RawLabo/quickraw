@@ -2,18 +2,18 @@ use super::decode_utility::bit_pump::*;
 use super::*;
 use once_cell::sync::Lazy;
 
-pub struct General {
+pub(super) struct General {
     info: quickexif::ParsedInfo,
 }
 
-pub(crate) static THUMBNAIL_RULE: Lazy<quickexif::ParsingRule> = Lazy::new(|| {
+pub(super) static THUMBNAIL_RULE: Lazy<quickexif::ParsingRule> = Lazy::new(|| {
     quickexif::describe_rule!(tiff {
         0x0112 / orientation
         0x002e / thumbnail(thumbnail_len)
     })
 });
 
-pub(crate) static IMAGE_RULE: Lazy<quickexif::ParsingRule> = Lazy::new(|| {
+pub(super) static IMAGE_RULE: Lazy<quickexif::ParsingRule> = Lazy::new(|| {
     quickexif::describe_rule!(tiff {
         0x0002 / width
         0x0003 / height

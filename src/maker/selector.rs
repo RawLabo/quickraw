@@ -2,7 +2,7 @@ use crate::RawFileReadingError;
 use super::super::data;
 use super::*;
 
-pub fn select_decoder(
+pub(in super::super) fn select_decoder(
     file_buffer: &[u8],
     basic_info: quickexif::ParsedInfo,
     only_thumbnail: bool,

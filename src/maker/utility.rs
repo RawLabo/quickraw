@@ -1,6 +1,4 @@
-use once_cell::sync::Lazy;
-
-pub(crate) trait GetNumFromBytes {
+pub(super) trait GetNumFromBytes {
     fn u16(&self, is_le: bool, start: usize) -> u16;
     fn u16le(&self, start: usize) -> u16;
     fn u16be(&self, start: usize) -> u16;
@@ -11,7 +9,7 @@ pub(crate) trait GetNumFromBytes {
     fn r64(&self, is_le: bool, start: usize) -> f64;
 }
 
-pub(crate) trait GetBytesFromInt<T> {
+pub(super) trait GetBytesFromInt<T> {
     fn to_bytes(self, is_le: bool) -> T;
 }
 
@@ -74,15 +72,15 @@ gen_get_bytes_impls!(u32, 4);
 
 
 #[inline(always)]
-pub fn to_16bit_iter(buffer: &[u8], is_le: bool) -> impl Iterator<Item = u16> + '_ {
+pub(super) fn to_16bit_iter(buffer: &[u8], is_le: bool) -> impl Iterator<Item = u16> + '_ {
     buffer.chunks_exact(2).map(move |bytes| bytes.u16(is_le, 0))
 }
 #[inline(always)]
-pub fn to_14bit_iter(buffer: &[u8], is_le: bool) -> impl Iterator<Item = u16> + '_ {
+pub(super) fn to_14bit_iter(buffer: &[u8], is_le: bool) -> impl Iterator<Item = u16> + '_ {
     buffer.chunks_exact(2).map(move |bytes| bytes.u16(is_le, 0) & 0x3fff)
 }
 #[inline(always)]
-pub fn to_14bit_iter_packed(buffer: &[u8], is_le: bool) -> impl Iterator<Item = u16> + '_ {
+pub(super) fn to_14bit_iter_packed(buffer: &[u8], is_le: bool) -> impl Iterator<Item = u16> + '_ {
     buffer.chunks_exact(7).flat_map(move |bytes| {
         let g1 = bytes[0] as u16;
         let g2 = bytes[1] as u16;
@@ -114,15 +112,15 @@ pub fn to_14bit_iter_packed(buffer: &[u8], is_le: bool) -> impl Iterator<Item = 
 }
 
 #[inline(always)]
-pub fn to_12bit_iter(buffer: &[u8], is_le: bool) -> impl Iterator<Item = u16> + '_ {
+pub(super) fn to_12bit_iter(buffer: &[u8], is_le: bool) -> impl Iterator<Item = u16> + '_ {
     buffer.chunks_exact(2).map(move |bytes| bytes.u16(is_le, 0) & 0x0fff)
 }
 #[inline(always)]
-pub fn to_12bit_left_aligned_iter(buffer: &[u8], is_le: bool) -> impl Iterator<Item = u16> + '_ {
+pub(super) fn to_12bit_left_aligned_iter(buffer: &[u8], is_le: bool) -> impl Iterator<Item = u16> + '_ {
     buffer.chunks_exact(2).map(move |bytes| bytes.u16(is_le, 0) >> 4)
 }
 #[inline(always)]
-pub fn to_12bit_iter_packed(buffer: &[u8], is_le: bool) -> impl Iterator<Item = u16> + '_ {
+pub(super) fn to_12bit_iter_packed(buffer: &[u8], is_le: bool) -> impl Iterator<Item = u16> + '_ {
     buffer.chunks_exact(3).flat_map(move |bytes| {
         let g1 = bytes[0] as u16;
         let g2 = bytes[1] as u16;
@@ -136,35 +134,8 @@ pub fn to_12bit_iter_packed(buffer: &[u8], is_le: bool) -> impl Iterator<Item = 
     })
 }
 
-pub static BASIC_INFO_RULE : Lazy<quickexif::ParsingRule> = Lazy::new(|| {
-    quickexif::describe_rule!(tiff {
-        0x010f {
-            str + 0 / make
-        }
-        0x0110 {
-            str + 0 / model
-        }
-        0xc612? / dng_version
-        if dng_version ? {
-            0xc614 {
-                str + 0 / make_model
-            }
-            0xc622 {
-                r64 + 0 / c0
-                r64 + 1 / c1
-                r64 + 2 / c2
-                r64 + 3 / c3
-                r64 + 4 / c4
-                r64 + 5 / c5
-                r64 + 6 / c6
-                r64 + 7 / c7
-                r64 + 8 / c8
-            }
-        }
-    })
-});
 
-pub fn matrix3_normalize(x: &mut [f32]) {
+pub(super) fn matrix3_normalize(x: &mut [f32]) {
     assert!(x.len() == 9);
     x.chunks_exact_mut(3).for_each(|x| {
         let sum = x.iter().sum::<f32>();
@@ -172,7 +143,7 @@ pub fn matrix3_normalize(x: &mut [f32]) {
     });
 }
 
-pub fn matrix3_inverse(x: &mut [f32]) {
+pub(super) fn matrix3_inverse(x: &mut [f32]) {
     assert!(x.len() == 9);
     let m11 = x[0];
     let m12 = x[3];

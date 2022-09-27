@@ -1,7 +1,7 @@
 use super::*;
 use once_cell::sync::Lazy;
 
-pub static FUJI_SENSOR_TABLE: phf::Map<&'static str, u8> = phf::phf_map! {
+static FUJI_SENSOR_TABLE: phf::Map<&'static str, u8> = phf::phf_map! {
     "X-T1" => 0, // RBGBRG by default
 
     "X-T3" => 1, // GGRGGB
@@ -20,11 +20,11 @@ pub static FUJI_SENSOR_TABLE: phf::Map<&'static str, u8> = phf::phf_map! {
     "GFX100S" => 100,
 };
 
-pub struct General {
+pub(super) struct General {
     info: quickexif::ParsedInfo,
 }
 
-pub(crate) static THUMBNAIL_RULE: Lazy<quickexif::ParsingRule> = Lazy::new(|| {
+pub(super) static THUMBNAIL_RULE: Lazy<quickexif::ParsingRule> = Lazy::new(|| {
     quickexif::describe_rule!(tiff {
         0x0112 / orientation
         next {
@@ -34,7 +34,7 @@ pub(crate) static THUMBNAIL_RULE: Lazy<quickexif::ParsingRule> = Lazy::new(|| {
     })
 });
 
-pub(crate) static IMAGE_RULE: Lazy<quickexif::ParsingRule> = Lazy::new(|| {
+pub(super) static IMAGE_RULE: Lazy<quickexif::ParsingRule> = Lazy::new(|| {
     quickexif::describe_rule!(tiff {
         0x0112 / orientation
         offset + 8 {

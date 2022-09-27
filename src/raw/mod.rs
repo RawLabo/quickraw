@@ -3,7 +3,7 @@ mod raw_image;
 mod renderer;
 
 #[derive(Debug)]
-pub enum PointRGB {
+enum PointRGB {
     R,
     G1, // right to red pixel
     G2, // left to blue pixel
@@ -11,7 +11,7 @@ pub enum PointRGB {
 }
 
 #[derive(Debug)]
-pub struct PixelInfo {
+pub(super) struct PixelInfo {
     i: usize,
     v: i32,
     x: usize,
@@ -25,7 +25,7 @@ pub struct PixelInfo {
 }
 
 #[derive(Debug)]
-pub enum CFAPattern {
+pub(super) enum CFAPattern {
     RGGB,
     GRBG,
     GBRG,
@@ -33,23 +33,23 @@ pub enum CFAPattern {
     XTrans0, // RBGBRG
     XTrans1, // GGRGGB
 }
-pub enum Orientation {
+pub(super) enum Orientation {
     Horizontal,
     Rotate90,
     Rotate180,
     Rotate270,
 }
-pub struct Crop {
-    pub x: u32,
-    pub y: u32,
-    pub width: u32,
-    pub height: u32,
+pub(super) struct Crop {
+    pub(super) x: u32,
+    pub(super) y: u32,
+    pub(super) width: u32,
+    pub(super) height: u32,
 }
-pub struct RawImage {
-    pub cfa_pattern: CFAPattern,
-    pub width: usize,
-    pub height: usize,
-    pub crop: Option<Crop>,
-    pub orientation: Orientation,
-    pub image: Vec<u16>,
+pub(super) struct RawImage {
+    cfa_pattern: CFAPattern,
+    width: usize,
+    height: usize,
+    pub(super) crop: Option<Crop>,
+    pub(super) orientation: Orientation,
+    image: Vec<u16>,
 }

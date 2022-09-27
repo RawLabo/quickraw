@@ -2,7 +2,7 @@ use super::{utility::ImageOp, *};
 
 impl Linear {
     #[inline(always)]
-    pub fn xtrans0(
+    pub(in super::super) fn xtrans0(
         PixelInfo {
             i,
             v,
@@ -123,7 +123,7 @@ impl Linear {
     }
 
     #[inline(always)]
-    pub fn xtrans1(
+    pub(in super::super) fn xtrans1(
         PixelInfo {
             i,
             v,

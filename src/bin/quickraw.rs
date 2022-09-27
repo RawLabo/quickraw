@@ -1,7 +1,7 @@
 use anyhow::{Context, Result};
 use core::panic;
 use quickraw::{
-    data, export::Export, DemosaicingMethod, ExportError, Input, Output, OutputType, BENCH_FLAG,
+    data, DemosaicingMethod, Export, ExportError, Input, Output, OutputType, BENCH_FLAG,
 };
 use rayon::prelude::*;
 use std::{env, fs, mem, path::Path};
@@ -173,14 +173,15 @@ fn export_by_file(file: &str, options: Options) -> Result<()> {
         Switch::Off => {}
     };
 
-    let output = Output {
-        demosaicing_method: options.demosaicing_method,
-        color_space: options.color_space,
-        gamma: options.gamma,
-        auto_crop: options.auto_crop,
-        auto_rotate: options.auto_rotate,
-        output_type: merge_output_type(file, options.output_dir, options.output_type),
-    };
+    let output = Output::new(
+        options.demosaicing_method,
+        options.color_space,
+        options.gamma,
+        merge_output_type(file, options.output_dir, options.output_type),
+        options.auto_crop,
+        options.auto_rotate,
+    );
+
     let export = Export::new(Input::ByFile(file), output)
         .with_context(|| ExportError::InvalidFileForNewExport(file.to_owned()))?;
 

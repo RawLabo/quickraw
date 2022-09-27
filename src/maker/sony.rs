@@ -7,11 +7,11 @@ use super::utility::GetNumFromBytes;
 
 use once_cell::sync::Lazy;
 
-pub struct General {
+pub(super) struct General {
     info: quickexif::ParsedInfo,
 }
 
-pub(crate) static THUMBNAIL_RULE: Lazy<quickexif::ParsingRule> = Lazy::new(|| {
+pub(super) static THUMBNAIL_RULE: Lazy<quickexif::ParsingRule> = Lazy::new(|| {
     quickexif::describe_rule!(tiff {
         0x0112 / orientation
         0x0201 / preview_offset
@@ -19,7 +19,7 @@ pub(crate) static THUMBNAIL_RULE: Lazy<quickexif::ParsingRule> = Lazy::new(|| {
     })
 });
 
-pub(crate) static IMAGE_RULE: Lazy<quickexif::ParsingRule> = Lazy::new(|| {
+pub(super) static IMAGE_RULE: Lazy<quickexif::ParsingRule> = Lazy::new(|| {
     quickexif::describe_rule!(tiff {
         0x0112 / orientation
         0x8769 {

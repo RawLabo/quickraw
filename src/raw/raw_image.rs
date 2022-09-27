@@ -3,7 +3,7 @@ use crate::{RawJob, maker::DecodingError};
 
 impl RawImage {
     #[attrs::bench(decoding_with_preprocess)]
-    pub fn new(
+    pub(crate) fn new(
         RawJob {
             file_buffer, decoder, ..
         }: &RawJob,

@@ -120,7 +120,7 @@ impl SOFInfo {
 }
 
 #[derive(Debug)]
-pub struct LjpegDecompressor<'a> {
+pub(in super::super) struct LjpegDecompressor<'a> {
     buffer: &'a [u8],
     sof: SOFInfo,
     predictor: usize,
@@ -129,11 +129,11 @@ pub struct LjpegDecompressor<'a> {
 }
 
 impl<'a> LjpegDecompressor<'a> {
-    pub fn new(src: &'a [u8]) -> Result<LjpegDecompressor, DecodingError> {
+    pub(in super::super) fn new(src: &'a [u8]) -> Result<LjpegDecompressor, DecodingError> {
         LjpegDecompressor::new_full(src, false, false)
     }
 
-    pub fn new_full(src: &'a [u8], dng_bug: bool, csfix: bool) -> Result<LjpegDecompressor, DecodingError> {
+    pub(in super::super) fn new_full(src: &'a [u8], dng_bug: bool, csfix: bool) -> Result<LjpegDecompressor, DecodingError> {
         let mut input = ByteStream::new(src, false);
         if LjpegDecompressor::get_next_marker(&mut input, false)? != m(Marker::SOI) {
             return Err(DecodingError::LJpegError("ljpeg: Image did not start with SOI. Probably not LJPEG"));
@@ -251,7 +251,7 @@ impl<'a> LjpegDecompressor<'a> {
         Ok(())
     }
 
-    pub fn decode(
+    pub(in super::super) fn decode(
         &self,
         out: &mut [u16],
         x: usize,
@@ -282,7 +282,7 @@ impl<'a> LjpegDecompressor<'a> {
         }
     }
 
-    // pub fn decode_leaf(&self, width: usize, height: usize) -> Result<Vec<u16>> {
+    // pub(in super::super) fn decode_leaf(&self, width: usize, height: usize) -> Result<Vec<u16>> {
     //     let mut offsets = vec![0 as usize; 1];
     //     let mut input = ByteStream::new(self.buffer, false);
     //     loop {
@@ -318,16 +318,16 @@ impl<'a> LjpegDecompressor<'a> {
     //     Ok(out)
     // }
 
-    // pub fn width(&self) -> usize {
+    // pub(in super::super) fn width(&self) -> usize {
     //     self.sof.width * self.sof.cps
     // }
-    // pub fn height(&self) -> usize {
+    // pub(in super::super) fn height(&self) -> usize {
     //     self.sof.height
     // }
-    // pub fn super_v(&self) -> usize {
+    // pub(in super::super) fn super_v(&self) -> usize {
     //     self.sof.components[0].super_v
     // }
-    // pub fn super_h(&self) -> usize {
+    // pub(in super::super) fn super_h(&self) -> usize {
     //     self.sof.components[0].super_h
     // }
 }

@@ -1,18 +1,18 @@
 use crate::raw::{CFAPattern, Crop, Orientation};
 use thiserror::Error;
 
-pub mod selector;
-pub mod utility;
+pub(super) mod selector;
+mod utility;
 
-pub mod adobe;
+mod adobe;
 mod decode_utility;
-pub mod fujifilm;
-pub mod nikon;
-pub mod olympus;
-pub mod panasonic;
-pub mod sony;
+mod fujifilm;
+mod nikon;
+mod olympus;
+mod panasonic;
+mod sony;
 
-pub trait RawDecoder {
+pub(super) trait RawDecoder {
     fn new(info: quickexif::ParsedInfo) -> Self
     where
         Self: Sized;
