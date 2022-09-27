@@ -219,10 +219,10 @@ impl<'a> LjpegDecompressor<'a> {
             let th = b & 0xf;
 
             if tc != 0 {
-                return Err(DecodingError::LJpegError("ljpeg: unsuported table class in DHT"));
+                return Err(DecodingError::LJpegError("ljpeg: unsupported table class in DHT"));
             }
             if th > 3 {
-                return Err(DecodingError::LJpegError("ljpeg: unsuported table id"));
+                return Err(DecodingError::LJpegError("ljpeg: unsupported table id"));
             }
 
             let mut acc: usize = 0;
