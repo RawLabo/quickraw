@@ -10,7 +10,7 @@ license = "LGPL-2.1"
 exclude = ["tests/"]
 
 [dependencies]
-attrs = { path = "attrs" }
+attrs = { version = "0.1", path = "attrs" }
 thiserror = "1"
 once_cell = "1"
 phf = { version = "0.10", features = ["macros"] }
