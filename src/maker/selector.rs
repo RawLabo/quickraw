@@ -3,10 +3,10 @@ use super::*;
 use crate::raw::RawImage;
 use crate::RawFileReadingError;
 
-fn prepare<'a>(
-    basic_info: &'a quickexif::ParsedInfo,
+fn prepare(
+    basic_info: &quickexif::ParsedInfo,
     only_thumbnail: bool,
-) -> Result<(&'a str, Option<u16>, [f32; 9]), RawFileReadingError> {
+) -> Result<(&str, Option<u16>, [f32; 9]), RawFileReadingError> {
     let make = basic_info
         .str("make")
         .map_err(|_| RawFileReadingError::CannotReadMake)?;

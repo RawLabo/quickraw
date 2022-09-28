@@ -16,6 +16,7 @@ pub(super) struct PixelInfo {
     is_row_even: bool,
 }
 
+#[allow(clippy::upper_case_acronyms)]
 #[derive(Debug)]
 pub(super) enum CFAPattern {
     RGGB,
