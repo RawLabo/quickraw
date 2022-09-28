@@ -1,11 +1,9 @@
 use thiserror::Error;
 
-use maker::RawDecoder;
-
 pub mod data;
 
 mod color;
-mod raw_job;
+mod decode;
 mod utility;
 
 mod maker;
@@ -25,12 +23,6 @@ struct ColorConversion {
     white_balance: [i32; 3],
     gamma_lut: [u16; 65536],
     color_space: [i32; 9],
-}
-struct RawJob {
-    file_buffer: Vec<u8>,
-    decoder: Box<dyn RawDecoder>,
-    white_balance: [i32; 3],
-    cam_matrix: [f32; 9],
 }
 
 #[derive(Clone)]

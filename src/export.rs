@@ -50,13 +50,12 @@ impl Export {
         (x / 256) as u8
     }
     pub fn new(input: Input, output: Output) -> Result<Self, RawFileReadingError> {
-        let raw_job = match input {
-            Input::ByFile(file) => RawJob::new(file),
-            Input::ByBuffer(buffer) => RawJob::new_from_buffer(buffer),
+        let raw_image = match input {
+            Input::ByFile(file) => decode::new_image_from_file(file),
+            Input::ByBuffer(buffer) => decode::new_image_from_buffer(buffer),
         }?;
 
-        let color_conversion = ColorConversion::new(&raw_job, output.color_space, output.gamma);
-        let raw_image = RawImage::new(&raw_job)?;
+        let color_conversion = ColorConversion::new(&raw_image, output.color_space, output.gamma);
 
         Ok(Export {
             color_conversion,
@@ -65,18 +64,16 @@ impl Export {
         })
     }
 
-    fn _export_thumbnail_data(
-        buffer: &[u8],
-    ) -> Result<(&[u8], Orientation), ExportError> {
-        let (thumbnail, orientation) = RawJob::get_thumbnail(buffer)?;
+    fn _export_thumbnail_data(buffer: &[u8]) -> Result<(&[u8], Orientation), ExportError> {
+        let (thumbnail, orientation) = decode::get_thumbnail(buffer)?;
         Ok((thumbnail, orientation))
     }
     pub fn export_thumbnail_to_file(
         input_path: &str,
         output_path: &str,
     ) -> Result<(), ExportError> {
-        let buffer = RawJob::get_buffer_from_file(input_path)?;
-        let (thumbnail, orientation) = RawJob::get_thumbnail(buffer.as_slice())?;
+        let buffer = decode::get_buffer_from_file(input_path)?;
+        let (thumbnail, orientation) = decode::get_thumbnail(buffer.as_slice())?;
 
         match orientation {
             Orientation::Horizontal => {
@@ -121,13 +118,12 @@ impl Export {
     }
 
     pub fn export_exif_info_directly(input: Input) -> Result<String, RawFileReadingError> {
-        let raw_job = match input {
-            Input::ByFile(file) => RawJob::new(file),
-            Input::ByBuffer(buffer) => RawJob::new_from_buffer(buffer),
-        }?;
-        raw_job
-            .decoder
-            .get_info()
+        let buffer = match input {
+            Input::ByFile(file) => decode::get_buffer_from_file(file)?,
+            Input::ByBuffer(buffer) => buffer,
+        };
+
+        decode::get_exif_info(&buffer)?
             .stringify_all()
             .map_err(|err| quickexif::parsed_info::Error::from(err).into())
     }

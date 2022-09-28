@@ -1,12 +1,12 @@
-use crate::RawFileReadingError;
 use super::super::data;
 use super::*;
+use crate::raw::RawImage;
+use crate::RawFileReadingError;
 
-pub(in super::super) fn select_decoder(
-    file_buffer: &[u8],
-    basic_info: quickexif::ParsedInfo,
+fn prepare<'a>(
+    basic_info: &'a quickexif::ParsedInfo,
     only_thumbnail: bool,
-) -> Result<(Box<dyn RawDecoder>, [f32; 9]), RawFileReadingError> {
+) -> Result<(&'a str, Option<u16>, [f32; 9]), RawFileReadingError> {
     let make = basic_info
         .str("make")
         .map_err(|_| RawFileReadingError::CannotReadMake)?;
@@ -37,47 +37,107 @@ pub(in super::super) fn select_decoder(
         }
     };
 
-    macro_rules! get_decoder {
+    Ok((make, dng_version, cam_matrix))
+}
+
+pub(in super::super) fn select_and_decode_exif_info(
+    file_buffer: &[u8],
+    basic_info: quickexif::ParsedInfo,
+) -> Result<quickexif::ParsedInfo, RawFileReadingError> {
+    let (make, dng_version, _) = prepare(&basic_info, true)?;
+
+    let rule = match dng_version {
+        None => match make {
+            "NIKON" | "NIKON CORPORATION" => Ok(&nikon::IMAGE_RULE),
+            "SONY" => Ok(&sony::IMAGE_RULE),
+            "Panasonic" => Ok(&panasonic::IMAGE_RULE),
+            "OLYMPUS CORPORATION" | "OLYMPUS IMAGING CORP." => Ok(&olympus::IMAGE_RULE),
+            "FUJIFILM" => Ok(&fujifilm::IMAGE_RULE),
+            _ => Err(RawFileReadingError::MakerIsNotSupportedYet(make.to_owned())),
+        },
+        Some(_version) => Ok(&adobe::IMAGE_RULE),
+    }?;
+
+    Ok(quickexif::parse_with_prev_info(
+        file_buffer,
+        rule,
+        basic_info,
+    )?)
+}
+
+pub(in super::super) fn select_and_decode_thumbnail(
+    file_buffer: &[u8],
+    basic_info: quickexif::ParsedInfo,
+) -> Result<(&[u8], Orientation), RawFileReadingError> {
+    let (make, dng_version, _) = prepare(&basic_info, true)?;
+
+    macro_rules! decode {
         ($t:ident) => {{
-            let task = if only_thumbnail {
-                &$t::THUMBNAIL_RULE
-            } else {
-                &$t::IMAGE_RULE
-            };
-            let raw_info = quickexif::parse_with_prev_info(file_buffer, &task, basic_info)?;
-            $t::General::new(raw_info)
+            let raw_info =
+                quickexif::parse_with_prev_info(file_buffer, &$t::THUMBNAIL_RULE, basic_info)?;
+            let decoder = $t::General::new(raw_info);
+            let thumbnail = decoder.get_thumbnail(&file_buffer)?;
+            let orientation = decoder.get_orientation();
+            (thumbnail, orientation)
         }};
     }
 
-    let decoder: Result<Box<dyn RawDecoder>, RawFileReadingError> = match dng_version {
+    match dng_version {
         None => match make {
-            "NIKON" | "NIKON CORPORATION" => {
-                let decoder = get_decoder!(nikon);
-                Ok(Box::new(decoder))
-            }
-            "SONY" => {
-                let decoder = get_decoder!(sony);
-                Ok(Box::new(decoder))
-            }
-            "Panasonic" => {
-                let decoder = get_decoder!(panasonic);
-                Ok(Box::new(decoder))
-            }
-            "OLYMPUS CORPORATION" | "OLYMPUS IMAGING CORP." => {
-                let decoder = get_decoder!(olympus);
-                Ok(Box::new(decoder))
-            }
-            "FUJIFILM" => {
-                let decoder = get_decoder!(fujifilm);
-                Ok(Box::new(decoder))
-            }
+            "NIKON" | "NIKON CORPORATION" => Ok(decode!(nikon)),
+            "SONY" => Ok(decode!(sony)),
+            "Panasonic" => Ok(decode!(panasonic)),
+            "OLYMPUS CORPORATION" | "OLYMPUS IMAGING CORP." => Ok(decode!(olympus)),
+            "FUJIFILM" => Ok(decode!(fujifilm)),
             _ => Err(RawFileReadingError::MakerIsNotSupportedYet(make.to_owned())),
         },
-        Some(_version) => {
-            let decoder = get_decoder!(adobe);
-            Ok(Box::new(decoder))
-        }
-    };
+        Some(_version) => Ok(decode!(adobe)),
+    }
+}
 
-    Ok((decoder?, cam_matrix))
+pub(in super::super) fn select_and_decode(
+    file_buffer: &[u8],
+    basic_info: quickexif::ParsedInfo,
+) -> Result<RawImage, RawFileReadingError> {
+    let (make, dng_version, cam_matrix) = prepare(&basic_info, false)?;
+
+    macro_rules! decode {
+        ($t:ident) => {{
+            let raw_info =
+                quickexif::parse_with_prev_info(file_buffer, &$t::IMAGE_RULE, basic_info)?;
+            let width = raw_info.usize("width")?;
+            let height = raw_info.usize("height")?;
+
+            let decoder = $t::General::new(raw_info);
+            let cfa_pattern = decoder.get_cfa_pattern()?;
+            let crop = decoder.get_crop();
+            let orientation = decoder.get_orientation();
+            let white_balance = decoder.get_white_balance()?;
+            let image = decoder.decode_with_preprocess(file_buffer)?;
+
+            RawImage::new(
+                image,
+                width,
+                height,
+                cfa_pattern,
+                crop,
+                orientation,
+                (white_balance, cam_matrix),
+            )
+        }};
+    }
+
+    let raw_image = match dng_version {
+        None => match make {
+            "NIKON" | "NIKON CORPORATION" => Ok(decode!(nikon)),
+            "SONY" => Ok(decode!(sony)),
+            "Panasonic" => Ok(decode!(panasonic)),
+            "OLYMPUS CORPORATION" | "OLYMPUS IMAGING CORP." => Ok(decode!(olympus)),
+            "FUJIFILM" => Ok(decode!(fujifilm)),
+            _ => Err(RawFileReadingError::MakerIsNotSupportedYet(make.to_owned())),
+        },
+        Some(_version) => Ok(decode!(adobe)),
+    }?;
+
+    Ok(raw_image)
 }

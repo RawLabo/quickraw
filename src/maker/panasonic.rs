@@ -70,7 +70,7 @@ impl RawDecoder for General {
             height: bottom - y,
         })
     }
-    fn inner_pre_process(&self, buffer: &[u8]) -> Result<Vec<u16>, DecodingError> {
+    fn decode_with_preprocess(&self, buffer: &[u8]) -> Result<Vec<u16>, DecodingError> {
         let image = load_raw(&self.info, buffer)?;
         let black_level = self.info.u16("black_level_r")?;
         let bps_scale = self.get_bps_scale()?;
@@ -79,7 +79,7 @@ impl RawDecoder for General {
             .map(|x| bps_scale.saturating_mul(x.saturating_sub(black_level)))
             .collect())
     }
-    fn inner_get_cfa_pattern(&self) -> Result<CFAPattern, DecodingError> {
+    fn get_cfa_pattern(&self) -> Result<CFAPattern, DecodingError> {
         let cfa_pattern = self.info.u16("cfa_pattern")?;
         let result = match cfa_pattern {
             1 => CFAPattern::RGGB,
@@ -90,7 +90,7 @@ impl RawDecoder for General {
         };
         Ok(result)
     }
-    fn inner_get_thumbnail<'a>(&self, buffer: &'a [u8]) -> Result<&'a [u8], DecodingError> {
+    fn get_thumbnail<'a>(&self, buffer: &'a [u8]) -> Result<&'a [u8], DecodingError> {
         let offset = self.info.usize("thumbnail")?;
         let len = self.info.usize("thumbnail_len")?;
         Ok(&buffer[offset..offset + len])

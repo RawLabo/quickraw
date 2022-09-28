@@ -44,4 +44,6 @@ pub(super) struct RawImage {
     pub(super) crop: Option<Crop>,
     pub(super) orientation: Orientation,
     image: Vec<u16>,
+    pub(super) white_balance: [i32;3],
+    pub(super) cam_matrix: [f32;9]
 }

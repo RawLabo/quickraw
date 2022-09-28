@@ -100,20 +100,17 @@ impl RawDecoder for General {
         })
     }
     fn get_white_balance(&self) -> Result<[i32; 3], DecodingError> {
-        (|| -> Result<[i32; 3], DecodingError> {
-            let r = 512.0 * self.info.f64("white_balance_r")?;
-            let g = 512.0 * self.info.f64("white_balance_r")?;
-            let b = 512.0 * self.info.f64("white_balance_b")?;
-            Ok([r as i32, g as i32, b as i32])
-        })()
-        .map_err(|_| DecodingError::GetWhiteBalanceError)
+        let r = 512.0 * self.info.f64("white_balance_r")?;
+        let g = 512.0 * self.info.f64("white_balance_g")?;
+        let b = 512.0 * self.info.f64("white_balance_b")?;
+        Ok([r as i32, g as i32, b as i32])
     }
-    fn inner_get_thumbnail<'a>(&self, buffer: &'a [u8]) -> Result<&'a [u8], DecodingError> {
+    fn get_thumbnail<'a>(&self, buffer: &'a [u8]) -> Result<&'a [u8], DecodingError> {
         let offset = self.info.usize("thumbnail")?;
         let len = self.info.usize("thumbnail_len")?;
         Ok(&buffer[offset..offset + len])
     }
-    fn inner_pre_process(&self, buffer: &[u8]) -> Result<Vec<u16>, DecodingError> {
+    fn decode_with_preprocess(&self, buffer: &[u8]) -> Result<Vec<u16>, DecodingError> {
         let strip_offset = self.info.usize("strip")?;
         let strip_len = self.info.usize("strip_len")?;
         let width = self.info.usize("width")?;
@@ -170,7 +167,10 @@ impl RawDecoder for General {
         };
 
         if image.len() != width * height {
-            Err(DecodingError::InvalidDecodedImageSize(image.len(), width * height))
+            Err(DecodingError::InvalidDecodedImageSize(
+                image.len(),
+                width * height,
+            ))
         } else {
             Ok(image)
         }

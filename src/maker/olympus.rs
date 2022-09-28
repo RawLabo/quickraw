@@ -86,7 +86,7 @@ impl RawDecoder for General {
             height,
         })
     }
-    fn inner_pre_process(&self, buffer: &[u8]) -> Result<Vec<u16>, DecodingError> {
+    fn decode_with_preprocess(&self, buffer: &[u8]) -> Result<Vec<u16>, DecodingError> {
         let width = self.info.usize("width")?;
         let height = self.info.usize("height")?;
         let strip_offset = self.info.usize("strip")?;
@@ -106,7 +106,7 @@ impl RawDecoder for General {
             .map(|x| bps_scale.saturating_mul(x.saturating_sub(black_level)))
             .collect())
     }
-    fn inner_get_thumbnail<'a>(&self, buffer: &'a [u8]) -> Result<&'a [u8], DecodingError> {
+    fn get_thumbnail<'a>(&self, buffer: &'a [u8]) -> Result<&'a [u8], DecodingError> {
         let base = self.info.usize("maker_notes")?;
         let offset = self.info.usize("preview_image_start")? + base;
         let len = self.info.usize("preview_image_len")?;

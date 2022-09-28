@@ -1,3 +1,5 @@
+use raw::RawImage;
+
 use super::{*, utility::*};
 use std::cmp;
 
@@ -5,10 +7,10 @@ impl ColorConversion {
     const CLIP_LIMIT_I32: i32 = 65535;
     const CLIP_RANGE : (i32, i32) = (0, Self::CLIP_LIMIT_I32);
 
-    pub(super) fn new(raw_job : &RawJob, color_space : [f32;9], gamma: [f32;2]) -> Self {
-        let color_space = matrix3_mul(&color_space, &raw_job.cam_matrix);
+    pub(super) fn new(raw_image : &RawImage, color_space : [f32;9], gamma: [f32;2]) -> Self {
+        let color_space = matrix3_mul(&color_space, &raw_image.cam_matrix);
         let color_space = color_space.mul(1 << BIT_SHIFT);
-        let white_balance = raw_job.white_balance.mul(1 << (BIT_SHIFT - log2(raw_job.white_balance[1])));
+        let white_balance = raw_image.white_balance.mul(1 << (BIT_SHIFT - log2(raw_image.white_balance[1])));
         let gamma_lut = gen_gamma_lut(gamma);
         ColorConversion {
             white_balance,

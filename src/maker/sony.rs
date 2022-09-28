@@ -101,7 +101,7 @@ impl RawDecoder for General {
             height,
         })
     }
-    fn inner_pre_process(&self, buffer: &[u8]) -> Result<Vec<u16>, DecodingError> {
+    fn decode_with_preprocess(&self, buffer: &[u8]) -> Result<Vec<u16>, DecodingError> {
         let width = self.info.usize("width")?;
         let height = self.info.usize("height")?;
         let black_level = self.info.u16("black_level")?;
@@ -139,7 +139,8 @@ impl RawDecoder for General {
             Ok(image)
         }
     }
-    fn inner_get_thumbnail<'a>(&self, buffer: &'a [u8]) -> Result<&'a [u8], DecodingError> {
+
+    fn get_thumbnail<'a>(&self, buffer: &'a [u8]) -> Result<&'a [u8], DecodingError> {
         let offset = self.info.usize("preview_offset")?;
         let len = self.info.usize("preview_len")?;
         Ok(&buffer[offset..offset + len])

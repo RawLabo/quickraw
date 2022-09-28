@@ -1,29 +1,24 @@
 use super::*;
-use crate::{RawJob, maker::DecodingError};
 
 impl RawImage {
-    #[attrs::bench(decoding_with_preprocess)]
     pub(crate) fn new(
-        RawJob {
-            file_buffer, decoder, ..
-        }: &RawJob,
-    ) -> Result<Self, DecodingError> {
-        let image = decoder.pre_process(file_buffer)?;
-        let info = decoder.get_info();
-        let cfa_pattern = decoder.get_cfa_pattern()?;
-        let orientation = decoder.get_orientation();
-        let crop = decoder.get_crop();
-
-        let width = info.usize("width")?;
-        let height = info.usize("height")?;
-
-        Ok(RawImage {
+        image: Vec<u16>,
+        width: usize,
+        height: usize,
+        cfa_pattern: CFAPattern,
+        crop: Option<Crop>,
+        orientation: Orientation,
+        (white_balance, cam_matrix): ([i32;3], [f32;9])
+    ) -> Self {
+        RawImage {
             cfa_pattern,
             width,
             height,
             crop,
             orientation,
             image,
-        })
+            white_balance,
+            cam_matrix
+        }
     }
 }

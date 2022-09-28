@@ -159,13 +159,10 @@ impl RawDecoder for General {
         &self.info
     }
     fn get_white_balance(&self) -> Result<[i32; 3], DecodingError> {
-        (|| -> Result<[i32; 3], DecodingError> {
-            let r = 512.0 / self.info.f64("white_balance_r")?;
-            let g = 512.0 / self.info.f64("white_balance_g")?;
-            let b = 512.0 / self.info.f64("white_balance_b")?;
-            Ok([r as i32, g as i32, b as i32])
-        })()
-        .map_err(|_| DecodingError::GetWhiteBalanceError)
+        let r = 512.0 / self.info.f64("white_balance_r")?;
+        let g = 512.0 / self.info.f64("white_balance_g")?;
+        let b = 512.0 / self.info.f64("white_balance_b")?;
+        Ok([r as i32, g as i32, b as i32])
     }
     fn get_crop(&self) -> Option<Crop> {
         if let (Ok(crop_origin), Ok(crop_size)) =
@@ -194,13 +191,13 @@ impl RawDecoder for General {
             })
         }
     }
-    fn inner_get_thumbnail<'a>(&self, buffer: &'a [u8]) -> Result<&'a [u8], DecodingError> {
+    fn get_thumbnail<'a>(&self, buffer: &'a [u8]) -> Result<&'a [u8], DecodingError> {
         let offset = self.info.usize("thumbnail")?;
         let len = self.info.usize("thumbnail_len")?;
 
         Ok(&buffer[offset..offset + len])
     }
-    fn inner_pre_process(&self, buffer: &[u8]) -> Result<Vec<u16>, DecodingError> {
+    fn decode_with_preprocess(&self, buffer: &[u8]) -> Result<Vec<u16>, DecodingError> {
         let width = self.info.usize("width")?;
         let height = self.info.usize("height")?;
         let compression = self.info.u16("compression")?;
