@@ -23,7 +23,7 @@ pub(super) fn get_buffer_from_file(path: &str) -> Result<Vec<u8>, RawFileReading
     }
 }
 
-#[attrs::bench(decoding)]
+#[fn_util::bench(decoding)]
 pub fn new_image_from_file(path: &str) -> Result<RawImage, RawFileReadingError> {
     let buffer = get_buffer_from_file(path)?;
     new_image_from_buffer(buffer)

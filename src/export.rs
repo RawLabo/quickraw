@@ -41,7 +41,7 @@ impl Export {
         self.export_image_data(Self::cast_u16_u8)
     }
     
-    #[attrs::bench(demosaicing_with_postprocess)]
+    #[fn_util::bench(demosaicing_with_postprocess)]
     pub fn export_image_data<T>(&self, cast_fn: fn(u16) -> T) -> (Vec<T>, usize, usize) {
         match self.output.demosaicing_method {
             DemosaicingMethod::None => self
@@ -108,7 +108,7 @@ pub mod image_export {
     }
 
     impl Export {
-        #[attrs::bench(writing_file)]
+        #[fn_util::bench(writing_file)]
         fn write_to_file<T: 'static + image::Primitive>(
             &self,
             path: &String,

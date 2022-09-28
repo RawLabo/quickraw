@@ -223,7 +223,7 @@ fn export_by_options(mut options: Options) -> Result<()> {
     Ok(())
 }
 
-#[attrs::bench(total_process)]
+#[fn_util::bench(total_process)]
 fn main() -> Result<()> {
     let args = env::args().collect::<Vec<String>>();
     let args = args.iter().map(|x| x.as_str()).collect::<Vec<&str>>();
