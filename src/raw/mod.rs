@@ -18,7 +18,7 @@ pub(super) struct PixelInfo {
 
 #[allow(clippy::upper_case_acronyms)]
 #[derive(Debug)]
-pub(super) enum CFAPattern {
+pub enum CFAPattern {
     RGGB,
     GRBG,
     GBRG,
@@ -26,25 +26,25 @@ pub(super) enum CFAPattern {
     XTrans0, // RBGBRG
     XTrans1, // GGRGGB
 }
-pub(super) enum Orientation {
+pub enum Orientation {
     Horizontal,
     Rotate90,
     Rotate180,
     Rotate270,
 }
-pub(super) struct Crop {
-    pub(super) x: u32,
-    pub(super) y: u32,
-    pub(super) width: u32,
-    pub(super) height: u32,
+pub struct Crop {
+    pub x: u32,
+    pub y: u32,
+    pub width: u32,
+    pub height: u32,
 }
-pub(super) struct RawImage {
-    cfa_pattern: CFAPattern,
-    width: usize,
-    height: usize,
-    pub(super) crop: Option<Crop>,
-    pub(super) orientation: Orientation,
-    image: Vec<u16>,
-    pub(super) white_balance: [i32;3],
-    pub(super) cam_matrix: [f32;9]
+pub struct RawImage {
+    pub cfa_pattern: CFAPattern,
+    pub width: usize,
+    pub height: usize,
+    pub crop: Option<Crop>,
+    pub orientation: Orientation,
+    pub image: Vec<u16>,
+    pub white_balance: [i32;3],
+    pub cam_matrix: [f32;9]
 }

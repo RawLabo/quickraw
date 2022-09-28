@@ -1,18 +1,23 @@
+//! 
+//! 
+//! 
 use thiserror::Error;
 
 pub mod data;
 
 mod color;
-mod decode;
 mod utility;
 
 mod maker;
 mod raw;
 
-#[cfg(feature = "image")]
-pub mod export;
+mod decode;
+pub use decode::new_image_from_file;
+pub use decode::new_image_from_buffer;
 
+mod export;
 #[cfg(feature = "image")]
+pub use export::image_export;
 pub use export::Export;
 
 pub const BENCH_FLAG: &str = "QUICKRAW_BENCH";
@@ -42,6 +47,8 @@ pub enum Input<'a> {
     ByFile(&'a str),
     ByBuffer(Vec<u8>),
 }
+
+#[allow(dead_code)]
 #[derive(Clone)]
 pub struct Output {
     demosaicing_method: DemosaicingMethod,
@@ -70,6 +77,7 @@ impl Output {
         }
     }
 }
+
 #[derive(Error, Debug)]
 pub enum RawFileReadingError {
     #[error("Exif parsing error.")]

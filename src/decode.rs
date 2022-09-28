@@ -24,12 +24,12 @@ pub(super) fn get_buffer_from_file(path: &str) -> Result<Vec<u8>, RawFileReading
 }
 
 #[attrs::bench(decoding)]
-pub(super) fn new_image_from_file(path: &str) -> Result<RawImage, RawFileReadingError> {
+pub fn new_image_from_file(path: &str) -> Result<RawImage, RawFileReadingError> {
     let buffer = get_buffer_from_file(path)?;
     new_image_from_buffer(buffer)
 }
 
-pub(super) fn new_image_from_buffer(buffer: Vec<u8>) -> Result<RawImage, RawFileReadingError> {
+pub fn new_image_from_buffer(buffer: Vec<u8>) -> Result<RawImage, RawFileReadingError> {
     let rule = &utility::BASIC_INFO_RULE;
     let decoder_select_info = quickexif::parse(&buffer, rule)?;
 
