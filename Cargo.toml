@@ -1,6 +1,6 @@
 [package]
 name = "quickraw"
-version = "0.1.3"
+version = "0.1.4"
 edition = "2021"
 description = "A rust library to handle camera raw files"
 keywords = ["raw", "camera"]
