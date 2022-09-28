@@ -25,8 +25,9 @@
 //! 
 //! let (image, width, height) = export_job.export_16bit_image();
 //! ```
-//! 
-#[cfg_attr(docsrs, feature(doc_auto_cfg))]
+
+#![cfg_attr(docsrs, feature(doc_auto_cfg))]
+
 use thiserror::Error;
 
 pub mod data;
