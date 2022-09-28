@@ -117,7 +117,7 @@ impl Export {
         }
     }
 
-    pub fn export_exif_info_directly(input: Input) -> Result<String, RawFileReadingError> {
+    pub fn export_exif_info(input: Input) -> Result<String, RawFileReadingError> {
         let buffer = match input {
             Input::ByFile(file) => decode::get_buffer_from_file(file)?,
             Input::ByBuffer(buffer) => buffer,

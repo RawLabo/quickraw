@@ -162,7 +162,7 @@ fn export_by_file(file: &str, options: Options) -> Result<()> {
 
     match options.exif_info {
         Switch::Only | Switch::On => {
-            let info = Export::export_exif_info_directly(Input::ByFile(file))
+            let info = Export::export_exif_info(Input::ByFile(file))
                 .with_context(|| ExportError::InvalidFileForNewExport(file.to_owned()))?;
             println!("\nExif info for '{file}':\n{info}");
 
