@@ -1,7 +1,7 @@
 use anyhow::{Context, Result};
 use core::panic;
 use quickraw::{
-    data, DemosaicingMethod, Export, image_export, ExportError, Input, Output, OutputType, BENCH_FLAG,
+    data, DemosaicingMethod, Export, ExportError, Input, Output, OutputType, BENCH_FLAG,
 };
 use rayon::prelude::*;
 use std::{env, fs, mem, path::Path};
@@ -150,7 +150,7 @@ fn export_by_file(file: &str, options: Options) -> Result<()> {
     match options.thumbnail {
         Switch::Only | Switch::On => {
             let path = merge_path(file, options.output_dir) + ".thumbnail.jpg";
-            image_export::export_thumbnail_to_file(file, path.as_str())
+            Export::export_thumbnail_to_file(file, path.as_str())
                 .with_context(|| ExportError::InvalidFileForNewExport(file.to_owned()))?;
 
             if matches!(options.thumbnail, Switch::Only) {

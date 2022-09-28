@@ -107,40 +107,6 @@ pub mod image_export {
         }
     }
 
-    pub fn export_thumbnail_to_file(
-        input_path: &str,
-        output_path: &str,
-    ) -> Result<(), ExportError> {
-        let buffer = decode::get_buffer_from_file(input_path)?;
-        let (thumbnail, orientation) = decode::get_thumbnail(buffer.as_slice())?;
-
-        match orientation {
-            Orientation::Horizontal => {
-                let mut f = File::create(output_path)
-                    .map_err(|_| ExportError::ErrorWhenExportingFile(output_path.to_owned()))?;
-                f.write_all(thumbnail)
-                    .map_err(|_| ExportError::ErrorWhenExportingFile(output_path.to_owned()))?;
-            }
-            _ => {
-                let img = image::load_from_memory(thumbnail).map_err(|_| {
-                    ExportError::CannotReadThumbnail(thumbnail.len(), input_path.to_owned())
-                })?;
-
-                let img = match orientation {
-                    Orientation::Rotate90 => imageops::rotate90(&img),
-                    Orientation::Rotate180 => imageops::rotate180(&img),
-                    Orientation::Rotate270 => imageops::rotate270(&img),
-                    _ => img.to_rgba8(),
-                };
-
-                img.save(output_path)
-                    .map_err(|_| ExportError::ErrorWhenExportingFile(output_path.to_owned()))?;
-            }
-        }
-
-        Ok(())
-    }
-
     impl Export {
         #[attrs::bench(writing_file)]
         fn write_to_file<T: 'static + image::Primitive>(
@@ -176,6 +142,40 @@ pub mod image_export {
                 .save_with_quality(path, quality)
                 .map_err(|_| ExportError::ErrorWhenExportingFile(path.to_owned()))?;
 
+            Ok(())
+        }
+
+        pub fn export_thumbnail_to_file(
+            input_path: &str,
+            output_path: &str,
+        ) -> Result<(), ExportError> {
+            let buffer = decode::get_buffer_from_file(input_path)?;
+            let (thumbnail, orientation) = decode::get_thumbnail(buffer.as_slice())?;
+    
+            match orientation {
+                Orientation::Horizontal => {
+                    let mut f = File::create(output_path)
+                        .map_err(|_| ExportError::ErrorWhenExportingFile(output_path.to_owned()))?;
+                    f.write_all(thumbnail)
+                        .map_err(|_| ExportError::ErrorWhenExportingFile(output_path.to_owned()))?;
+                }
+                _ => {
+                    let img = image::load_from_memory(thumbnail).map_err(|_| {
+                        ExportError::CannotReadThumbnail(thumbnail.len(), input_path.to_owned())
+                    })?;
+    
+                    let img = match orientation {
+                        Orientation::Rotate90 => imageops::rotate90(&img),
+                        Orientation::Rotate180 => imageops::rotate180(&img),
+                        Orientation::Rotate270 => imageops::rotate270(&img),
+                        _ => img.to_rgba8(),
+                    };
+    
+                    img.save(output_path)
+                        .map_err(|_| ExportError::ErrorWhenExportingFile(output_path.to_owned()))?;
+                }
+            }
+    
             Ok(())
         }
 

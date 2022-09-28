@@ -1,6 +1,32 @@
+//! A rust library to handle camera raw files.
 //! 
+//! ### Example
+//! ```no_run
+//! use quickraw::{data, DemosaicingMethod, Input, Output, Export, OutputType};
 //! 
+//! let demosaicing_method = DemosaicingMethod::Linear;
+//! let color_space = data::XYZ2SRGB;
+//! let gamma = data::GAMMA_SRGB;
+//! let output_type = OutputType::Raw16;
+//! let auto_crop = false;
+//! let auto_rotate = false;
 //! 
+//! let export_job = Export::new(
+//!     Input::ByFile("sample.ARW"),
+//!     Output::new(
+//!         demosaicing_method,
+//!         color_space,
+//!         gamma,
+//!         output_type,
+//!         auto_crop,
+//!         auto_rotate,
+//!     ),
+//! ).unwrap();
+//! 
+//! let (image, width, height) = export_job.export_16bit_image();
+//! ```
+//! 
+#[cfg_attr(docsrs, feature(doc_auto_cfg))]
 use thiserror::Error;
 
 pub mod data;
@@ -16,8 +42,6 @@ pub use decode::new_image_from_file;
 pub use decode::new_image_from_buffer;
 
 mod export;
-#[cfg(feature = "image")]
-pub use export::image_export;
 pub use export::Export;
 
 pub const BENCH_FLAG: &str = "QUICKRAW_BENCH";
