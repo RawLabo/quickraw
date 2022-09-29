@@ -1,3 +1,5 @@
+//! Contains predefined color spaces from XYZ to target, predefined gamma parameters and color spaces from CAM to XYZ for different cameras.
+
 // http://www.brucelindbloom.com/index.html?Eqn_RGB_to_XYZ.html
 pub static XYZ2ADOBE_RGB: [f32; 9] = [
     1.8037626,
@@ -29,7 +31,7 @@ pub static GAMMA_LINEAR: [f32; 2] = [1.0, 0.0];
 pub static GAMMA_SRGB: [f32; 2] = [0.45, 4.5];
 
 
-pub static CAM_XYZ_MATRIX: phf::Map<&'static str, [f32; 9]> = phf::phf_map! {
+pub static CAM_XYZ_MAP: phf::Map<&'static str, [f32; 9]> = phf::phf_map! {
     // canon
     "CanonEOS1000D" => [0.63586277, 0.32021528, 0.043921936, 0.14760394, 1.0232087, -0.17081264, 0.12331783, -0.13135043, 1.0080326],
     "CanonEOS100D" => [0.71765196, 0.2521696, 0.030178415, 0.107496575, 1.3098812, -0.4173778, 0.12629904, -0.13695003, 1.010651],

@@ -2,7 +2,7 @@
 name = "quickraw"
 version = "0.1.4"
 edition = "2021"
-description = "A rust library to handle camera raw files"
+description = "A pure rust library to handle camera raw files"
 keywords = ["raw", "camera"]
 documentation = "https://docs.rs/quickraw"
 repository = "https://github.com/qdwang/quickraw"

@@ -1,7 +1,7 @@
 use anyhow::{Context, Result};
 use core::panic;
 use quickraw::{
-    data, DemosaicingMethod, Export, ExportError, Input, Output, OutputType, BENCH_FLAG,
+    data, DemosaicingMethod, Export, export::Error as ExportError, Input, Output, OutputType, BENCH_FLAG,
 };
 use rayon::prelude::*;
 use std::{env, fs, mem, path::Path};
@@ -185,7 +185,7 @@ fn export_by_file(file: &str, options: Options) -> Result<()> {
     let export = Export::new(Input::ByFile(file), output)
         .with_context(|| ExportError::InvalidFileForNewExport(file.to_owned()))?;
 
-    export.export_jpeg(options.jpeg_quality)?;
+    export.export_image(options.jpeg_quality)?;
     Ok(())
 }
 

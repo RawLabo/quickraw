@@ -22,7 +22,7 @@ fn prepare(
         [0f32; 9]
     } else {
         match dng_version {
-            None => *data::CAM_XYZ_MATRIX
+            None => *data::CAM_XYZ_MAP
                 .get(model.as_str())
                 .ok_or_else(|| RawFileReadingError::ModelIsNotSupportedYet(model.clone()))?,
             Some(_) => {

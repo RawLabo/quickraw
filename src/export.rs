@@ -1,6 +1,25 @@
+//! Contains all the functions needed to export image.
+//! 
 use super::*;
 use crate::raw::{Orientation, RawImage};
 
+
+/// Errors cover issues during raw reading and image exporting.
+#[derive(Error, Debug)]
+pub enum Error {
+    #[error("Cannot export the image.")]
+    RawFileReadingError(#[from] RawFileReadingError),
+    #[error("Cannot create the export object for the file: '{0}'")]
+    InvalidFileForNewExport(String),
+    #[error("Cannot export image to the file: '{0}'")]
+    ErrorWhenExportingFile(String),
+    #[error("The {0} image data(len:{1}, width:{2}, height:{3}) is invalid for ImageBuffer.")]
+    ImageBufferError(String, usize, usize, usize),
+    #[error("Cannot understand the thumbnail image data(len: {0}) for the file: '{1}'")]
+    CannotReadThumbnail(usize, String),
+}
+
+/// Exports the rendered result.
 pub struct Export {
     color_conversion: ColorConversion,
     raw_image: RawImage,
@@ -29,20 +48,23 @@ impl Export {
         })
     }
 
-    pub fn export_thumbnail_data(buffer: &[u8]) -> Result<(&[u8], Orientation), ExportError> {
+    /// Exports u8 array reference of thumbnail data and the orientation.
+    pub fn export_thumbnail_data(buffer: &[u8]) -> Result<(&[u8], Orientation), Error> {
         let (thumbnail, orientation) = decode::get_thumbnail(buffer)?;
         Ok((thumbnail, orientation))
     }
 
+    /// Exports 16bit image RGB data with width and height.
     pub fn export_16bit_image(&self) -> (Vec<u16>, usize, usize) {
         self.export_image_data(Self::cast_identity)
     }
+    /// Exports 8bit image RGB data with width and height.
     pub fn export_8bit_image(&self) -> (Vec<u8>, usize, usize) {
         self.export_image_data(Self::cast_u16_u8)
     }
     
     #[fn_util::bench(demosaicing_with_postprocess)]
-    pub fn export_image_data<T>(&self, cast_fn: fn(u16) -> T) -> (Vec<T>, usize, usize) {
+    fn export_image_data<T>(&self, cast_fn: fn(u16) -> T) -> (Vec<T>, usize, usize) {
         match self.output.demosaicing_method {
             DemosaicingMethod::None => self
                 .raw_image
@@ -56,6 +78,7 @@ impl Export {
         }
     }
 
+    /// Exports the parsed EXIF data from input
     pub fn export_exif_info(input: Input) -> Result<quickexif::ParsedInfo, RawFileReadingError> {
         let buffer = match input {
             Input::ByFile(file) => decode::get_buffer_from_file(file)?,
@@ -64,6 +87,8 @@ impl Export {
 
         decode::get_exif_info(&buffer)
     }
+
+    /// Print all the parsed EXIF data from input
     pub fn print_exif_info(input: Input) -> Result<String, RawFileReadingError> {
         Export::export_exif_info(input)?
             .stringify_all()
@@ -71,6 +96,8 @@ impl Export {
     }
 }
 
+
+/// Enables image rotation and different image types output available.
 #[cfg(feature = "image")]
 pub mod image_export {
     use super::*;
@@ -114,7 +141,7 @@ pub mod image_export {
             path: &String,
             (data, width, height): (Vec<T>, usize, usize),
             quality: u8,
-        ) -> Result<(), ExportError>
+        ) -> Result<(), Error>
         where
             [T]: image::EncodableLayout,
         {
@@ -122,7 +149,7 @@ pub mod image_export {
             let mut image =
                 ImageBuffer::<Rgb<T>, Vec<T>>::from_raw(width as u32, height as u32, data)
                     .ok_or_else(|| {
-                        ExportError::ImageBufferError(stringify!(T).to_owned(), len, width, height)
+                        Error::ImageBufferError(stringify!(T).to_owned(), len, width, height)
                     })?;
 
             let image = match (&self.raw_image.crop, self.output.auto_crop) {
@@ -140,28 +167,29 @@ pub mod image_export {
 
             image
                 .save_with_quality(path, quality)
-                .map_err(|_| ExportError::ErrorWhenExportingFile(path.to_owned()))?;
+                .map_err(|_| Error::ErrorWhenExportingFile(path.to_owned()))?;
 
             Ok(())
         }
 
+        /// Exports the thumbnail image from raw to the path
         pub fn export_thumbnail_to_file(
             input_path: &str,
             output_path: &str,
-        ) -> Result<(), ExportError> {
+        ) -> Result<(), Error> {
             let buffer = decode::get_buffer_from_file(input_path)?;
             let (thumbnail, orientation) = decode::get_thumbnail(buffer.as_slice())?;
     
             match orientation {
                 Orientation::Horizontal => {
                     let mut f = File::create(output_path)
-                        .map_err(|_| ExportError::ErrorWhenExportingFile(output_path.to_owned()))?;
+                        .map_err(|_| Error::ErrorWhenExportingFile(output_path.to_owned()))?;
                     f.write_all(thumbnail)
-                        .map_err(|_| ExportError::ErrorWhenExportingFile(output_path.to_owned()))?;
+                        .map_err(|_| Error::ErrorWhenExportingFile(output_path.to_owned()))?;
                 }
                 _ => {
                     let img = image::load_from_memory(thumbnail).map_err(|_| {
-                        ExportError::CannotReadThumbnail(thumbnail.len(), input_path.to_owned())
+                        Error::CannotReadThumbnail(thumbnail.len(), input_path.to_owned())
                     })?;
     
                     let img = match orientation {
@@ -172,14 +200,15 @@ pub mod image_export {
                     };
     
                     img.save(output_path)
-                        .map_err(|_| ExportError::ErrorWhenExportingFile(output_path.to_owned()))?;
+                        .map_err(|_| Error::ErrorWhenExportingFile(output_path.to_owned()))?;
                 }
             }
     
             Ok(())
         }
 
-        pub fn export_jpeg(&self, quality: u8) -> Result<(), ExportError> {
+        /// Exports the rendered image to a Image file with specificed quality.
+        pub fn export_image(&self, quality: u8) -> Result<(), Error> {
             match &self.output.output_type {
                 OutputType::Image8(path) => {
                     let data = self.export_image_data(Export::cast_u16_u8);

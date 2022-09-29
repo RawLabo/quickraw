@@ -1,6 +1,28 @@
-//! A rust library to handle camera raw files.
+//! A pure rust library to handle camera raw files.
 //! 
-//! ### Example
+//! **quickraw** is a pure rust library to decode and renderer image from camera raw files.
+//! 
+//! ## Examples
+//! #### Export thumbnail
+//! ```no_run
+//! use quickraw::Export;
+//! 
+//! let raw_data = std::fs::read("sample.ARW").unwrap();
+//! let (thumbnail_data, orientation) = Export::export_thumbnail_data(&raw_data).unwrap();
+//! 
+//! // notice that this function is available on feature `image` only.
+//! quickraw::Export::export_thumbnail_to_file("sample.ARW", "sample.thumbnail.jpg").unwrap();
+//! ```
+//! 
+//! #### Get EXIF data
+//! ```no_run
+//! use quickraw::Export;
+//! let info = Export::export_exif_info(Input::ByFile("sample.ARW")).unwrap();
+//! 
+//! // info is a `quickexif::ParsedInfo` type, for more info please check https://docs.rs/quickexif
+//! let width = info.usize("width").unwrap();
+//! ```
+//! #### Export image
 //! ```no_run
 //! use quickraw::{data, DemosaicingMethod, Input, Output, Export, OutputType};
 //! 
@@ -24,9 +46,16 @@
 //! ).unwrap();
 //! 
 //! let (image, width, height) = export_job.export_16bit_image();
+//! 
+//! // or you can also export an image with quality(only works when the output type is JPEG).
+//! // notice that this function is available on feature `image` only.
+//! export_job.export_image(92).unwrap();
 //! ```
 
 #![cfg_attr(docsrs, feature(doc_auto_cfg))]
+
+/// A flag to enable benchmark for several key processes.
+pub const BENCH_FLAG: &str = "QUICKRAW_BENCH";
 
 use thiserror::Error;
 
@@ -42,10 +71,9 @@ mod decode;
 pub use decode::new_image_from_file;
 pub use decode::new_image_from_buffer;
 
-mod export;
+pub mod export;
 pub use export::Export;
 
-pub const BENCH_FLAG: &str = "QUICKRAW_BENCH";
 const BIT_SHIFT: u32 = 13u32;
 
 #[derive(Debug)]
@@ -55,12 +83,15 @@ struct ColorConversion {
     color_space: [i32; 9],
 }
 
+/// All the demosaicing method currently supported.
 #[derive(Clone)]
 pub enum DemosaicingMethod {
     None,
     SuperPixel,
     Linear,
 }
+
+/// Decides if the output should be 8bit or 16bit.
 #[derive(Clone)]
 pub enum OutputType {
     Raw8,
@@ -68,11 +99,14 @@ pub enum OutputType {
     Image8(String),
     Image16(String),
 }
+
+/// Chooses the input from a file or a buffer.
 pub enum Input<'a> {
     ByFile(&'a str),
     ByBuffer(Vec<u8>),
 }
 
+/// Contains options for image rendering.
 #[allow(dead_code)]
 #[derive(Clone)]
 pub struct Output {
@@ -103,6 +137,7 @@ impl Output {
     }
 }
 
+/// Errors of raw file reading.
 #[derive(Error, Debug)]
 pub enum RawFileReadingError {
     #[error("Exif parsing error.")]
@@ -127,16 +162,3 @@ pub enum RawFileReadingError {
     ModelIsNotSupportedYet(String),
 }
 
-#[derive(Error, Debug)]
-pub enum ExportError {
-    #[error("Cannot export the image.")]
-    RawFileReadingError(#[from] RawFileReadingError),
-    #[error("Cannot create the export object for the file: '{0}'")]
-    InvalidFileForNewExport(String),
-    #[error("Cannot export image to the file: '{0}'")]
-    ErrorWhenExportingFile(String),
-    #[error("The {0} image data(len:{1}, width:{2}, height:{3}) is invalid for ImageBuffer.")]
-    ImageBufferError(String, usize, usize, usize),
-    #[error("Cannot understand the thumbnail image data(len: {0}) for the file: '{1}'")]
-    CannotReadThumbnail(usize, String),
-}
