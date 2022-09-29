@@ -1,0 +1,269 @@
+# Supported camera models
+
+## Nikon(partially supported)
+* Z5
+* Z6 
+* Z62 
+* Z7
+* Z72
+* Z9
+* Z50
+* Z fc
+* D7500
+* D7200
+* D7100
+* D7000
+* D5600
+* D5500
+* D5300
+* D5200
+* D5100
+* D5000
+* D3400
+* D3300
+* D3200
+* D3100
+* D3000
+* D300
+* D300S
+* D500
+* D600
+* D610
+* D700
+* D750
+* D780
+* D800
+* D800E
+* D810
+* D850
+* D2Xs
+* D3
+* D3S
+* D3X
+* D4
+* D5
+* D40
+* D40X
+* D60
+* D80
+* D90
+* 1 AW1
+* 1 J1
+* 1 J2
+* 1 J3
+* 1 J5
+* 1 S2
+* 1 V1
+* 1 V2
+* 1 V3
+
+## Fujifilm(uncompressed)
+* X-T1
+* X-T2
+* X-T3
+* X-T4
+* X-T10
+* X-T20
+* X-T30
+* X-S10
+* X-Pro2
+* X-Pro3
+* X-Pro3
+* X-E2
+* X-E2S
+* X-E3
+* X-E4
+* X100F
+* X100S
+* X100S
+* X100T
+* X100V
+* GFX 50R
+* GFX 50S
+* GFX 100
+* GFX50S II
+* GFX100S(16bit color shift issue)
+
+
+## Sony
+* DSC-HX95
+* DSC-HX99
+* DSC-RX0
+* DSC-RX0M2
+* DSC-RX1
+* DSC-RX1R
+* DSC-RX1RM2
+* DSC-RX10
+* DSC-RX10M2
+* DSC-RX10M3
+* DSC-RX10M4
+* DSC-RX100
+* DSC-RX100M2
+* DSC-RX100M3
+* DSC-RX100M4
+* DSC-RX100M5
+* DSC-RX100M5A
+* DSC-RX100M6
+* DSC-RX100M7
+* DSLR-A450
+* DSLR-A500
+* DSLR-A550
+* DSLR-A580
+* DSLR-A700
+* ILCA-68
+* ILCA-77M2
+* ILCA-99M2
+* ILCE-1
+* ILCE-7
+* ILCE-7C
+* ILCE-7M2
+* ILCE-7M3
+* ILCE-7M4
+* ILCE-7R
+* ILCE-7RM2
+* ILCE-7RM3
+* ILCE-7RM3A
+* ILCE-7RM4
+* ILCE-7RM4A
+* ILCE-7S
+* ILCE-7SM2
+* ILCE-7SM3
+* ILCE-9
+* ILCE-9M2
+* ILCE-3000
+* ILCE-3500(color shift issue)
+* ILCE-5000
+* ILCE-5100
+* ILCE-6000
+* ILCE-6100
+* ILCE-6300
+* ILCE-6400
+* ILCE-6500
+* ILCE-6600
+* ILCE-QX1
+* NEX-3
+* NEX-3N
+* NEX-5
+* NEX-5N
+* NEX-5R
+* NEX-5T
+* NEX-6
+* NEX-7
+* NEX-C3
+* NEX-F3
+* SLT-A33
+* SLT-A35
+* SLT-A37
+* SLT-A55
+* SLT-A57
+* SLT-A58
+* SLT-A65
+* SLT-A77
+* SLT-A99
+* ZV-1
+* ZV-E10
+
+* ## Panasonic
+* DC-FZ45
+* DC-FZ80
+* DC-FZ82
+* DC-FZ10002
+* DC-G9(part)
+* DC-G90
+* DC-G91
+* DC-G95
+* DC-G100
+* DC-G110
+* DC-GF10
+* DC-GH5
+* DC-GX7MK3
+* DC-GX9
+* DC-GX800
+* DC-GX850
+* DC-GX880
+* DC-LX100M2
+* DC-TZ90
+* DC-TZ91
+* DC-TZ95
+* DC-TZ96
+* DC-TZ200
+* DC-TZ202
+* DMC-CM1
+* DMC-FZ28
+* DMC-FZ35
+* DMC-FZ45
+* DMC-FZ70
+* DMC-FZ72
+* DMC-FZ100
+* DMC-FZ150
+* DMC-FZ200
+* DMC-FZ300
+* DMC-FZ330
+* DMC-FZ1000
+* DMC-FZ2000
+* DMC-FZ2500
+* DMC-G1
+* DMC-G3
+* DMC-G5
+* DMC-G6
+* DMC-G7
+* DMC-G10
+* DMC-G80
+* DMC-G81
+* DMC-G85
+* DMC-LF1
+* DMC-LX3
+* DMC-LX5
+* DMC-LX7
+* DMC-LX10
+* DMC-LX15
+* DMC-LX100
+* DMC-TZ60
+* DMC-TZ70
+* DMC-TZ71
+* DMC-TZ80
+* DMC-TZ81
+* DMC-TZ100
+* DMC-TZ101
+* DMC-TZ110
+* DMC-ZS40
+* DMC-ZS60
+* DMC-ZS100
+
+
+## Olympus
+* E-520
+* E-600
+* E-620
+* E-M1
+* E-M1MarkII
+* E-M1MarkIII
+* E-M1X
+* E-M5
+* E-M5 Mark II
+* E-M5 Mark III
+* E-M10
+* E-M10 Mark II
+* E-M10 Mark III
+* E-M10 Mark IV
+* E-M10MarkIIIS
+* PenF
+* E-P1
+* E-P2
+* E-P3
+* E-P5
+* E-PL1
+* E-PL2
+* E-PL3
+* E-PL5
+* E-PL6
+* E-PL7
+* E-PL8
+* E-PL9
+* E-PL10
+* E-PM1
+* E-PM2
+* TG-4
+* TG-5
+* TG-6
+* XZ-1
