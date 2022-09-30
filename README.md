@@ -4,6 +4,8 @@
 
 A pure rust library to handle camera raw files.
 
+**This library uses integer data in process to boost the speed, it may not get a very precise result like other softwares that uses high precision float point data.**
+
 Checkout docs here: [https://docs.rs/quickraw](https://docs.rs/quickraw)
 
 ## Supported models
