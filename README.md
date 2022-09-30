@@ -2,7 +2,7 @@
 [![](https://img.shields.io/crates/v/quickraw?style=flat-square)](https://crates.io/crates/quickraw)
 [![](https://img.shields.io/github/v/release/qdwang/quickraw?label=cli-release&style=flat-square)](https://github.com/qdwang/quickraw/releases/latest)
 
-A pure rust library to read Raw files from cameras.
+A pure rust library to handle camera raw files.
 
 Checkout docs here: [https://docs.rs/quickraw](https://docs.rs/quickraw)
 
