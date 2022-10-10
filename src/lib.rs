@@ -66,6 +66,7 @@ mod utility;
 
 mod maker;
 mod raw;
+mod capi;
 
 mod decode;
 pub use decode::new_image_from_file;
