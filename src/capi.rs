@@ -112,13 +112,7 @@ impl Free for BasicInfo {
     }
 }
 
-#[no_mangle]
-pub extern "C" fn quickraw_load_basicinfo(
-    cpath: *mut c_char,
-    with_thumbnail: bool,
-) -> QuickrawResponse<BasicInfo> {
-    QuickrawResponse::new(load_basicinfo(cpath, with_thumbnail))
-}
+
 fn load_basicinfo(cpath: *mut c_char, with_thumbnail: bool) -> Result<BasicInfo> {
     let path = str_from_cchar(cpath);
     let exif = Export::export_exif_info(Input::ByFile(path))?;
@@ -132,7 +126,13 @@ fn load_basicinfo(cpath: *mut c_char, with_thumbnail: bool) -> Result<BasicInfo>
     };
     Ok(BasicInfo::new(s, thumbnail, orientation))
 }
-
+#[no_mangle]
+pub extern "C" fn quickraw_load_basicinfo(
+    cpath: *mut c_char,
+    with_thumbnail: bool,
+) -> QuickrawResponse<BasicInfo> {
+    QuickrawResponse::new(load_basicinfo(cpath, with_thumbnail))
+}
 #[no_mangle]
 pub extern "C" fn quickraw_free_basicinfo(mut response: QuickrawResponse<BasicInfo>) {
     response.free();
@@ -143,6 +143,15 @@ pub struct Image {
     data: RustVec,
     width: c_uint,
     height: c_uint,
+}
+impl Image {
+    fn new(img: Vec<u8>, width: usize, height: usize) -> Self {
+        Image {
+            data: RustVec::new(img),
+            width: width as c_uint,
+            height: height as c_uint,
+        }
+    }
 }
 impl Free for Image {
     fn free(&mut self) {
@@ -157,4 +166,31 @@ impl Default for Image {
             height: 0,
         }
     }
+}
+
+
+fn load_image(cpath: *mut c_char) -> Result<Image> {
+    let path = str_from_cchar(cpath);
+    let export = Export::new(
+        Input::ByFile(path),
+        Output::new(
+            DemosaicingMethod::Linear,
+            data::XYZ2SRGB,
+            data::GAMMA_SRGB,
+            OutputType::Raw8,
+            false,
+            false,
+        ),
+    )?;
+
+    let (img, width, height) = export.export_8bit_image();
+    Ok(Image::new(img, width, height))
+}
+#[no_mangle]
+pub extern "C" fn quickraw_load_image(cpath: *mut c_char) -> QuickrawResponse<Image> {
+    QuickrawResponse::new(load_image(cpath))
+}
+#[no_mangle]
+pub extern "C" fn quickraw_free_image(mut response: QuickrawResponse<Image>) {
+    response.free();
 }
