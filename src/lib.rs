@@ -67,10 +67,12 @@ mod utility;
 mod maker;
 mod raw;
 mod capi;
-
 mod decode;
 pub use decode::new_image_from_file;
 pub use decode::new_image_from_buffer;
+
+#[cfg(feature = "wasm-bindgen")]
+mod wasm;
 
 pub mod export;
 pub use export::Export;
