@@ -24,7 +24,7 @@ pub(super) fn get_buffer_from_file(path: &str) -> Result<Vec<u8>, RawFileReading
 }
 
 /// Gets `RawImage` from a file
-#[fn_util::bench(decoding)]
+#[cfg_attr(not(feature = "wasm-bindgen"), fn_util::bench(decoding))]
 pub fn new_image_from_file(path: &str) -> Result<RawImage, RawFileReadingError> {
     let buffer = get_buffer_from_file(path)?;
     new_image_from_buffer(buffer)
@@ -35,8 +35,7 @@ pub fn new_image_from_buffer(buffer: Vec<u8>) -> Result<RawImage, RawFileReading
     let rule = &utility::BASIC_INFO_RULE;
     let decoder_select_info = quickexif::parse(&buffer, rule)?;
 
-    let raw_image =
-        maker::selector::select_and_decode(buffer.as_slice(), decoder_select_info)?;
+    let raw_image = maker::selector::select_and_decode(buffer.as_slice(), decoder_select_info)?;
 
     Ok(raw_image)
 }

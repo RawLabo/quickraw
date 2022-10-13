@@ -21,6 +21,12 @@ quickexif = "0.1"
 image = { version = "0.23", optional = true }
 rayon = { version = "1.5", optional = true }
 
+# only for wasm target
+wasm-bindgen = { version = "0.2", optional = true }
+
+[features]
+wasm = ["wasm-bindgen"]
+
 [[bin]]
 name = "quickraw"
 required-features = ["image", "rayon"]
@@ -34,4 +40,4 @@ codegen-units = 1
 lto = "fat"
 
 [lib]
-crate-type = ["lib", "staticlib"]
+crate-type = ["lib", "staticlib", "cdylib"]

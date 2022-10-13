@@ -1,7 +1,8 @@
 use anyhow::{Context, Result};
 use core::panic;
 use quickraw::{
-    data, DemosaicingMethod, Export, export::Error as ExportError, Input, Output, OutputType, BENCH_FLAG,
+    data, export::Error as ExportError, DemosaicingMethod, Export, Input, Output, OutputType,
+    BENCH_FLAG,
 };
 use rayon::prelude::*;
 use std::{env, fs, mem, path::Path};
@@ -223,7 +224,7 @@ fn export_by_options(mut options: Options) -> Result<()> {
     Ok(())
 }
 
-#[fn_util::bench(total_process)]
+#[cfg_attr(not(feature = "wasm-bindgen"), fn_util::bench(total_process))]
 fn main() -> Result<()> {
     let args = env::args().collect::<Vec<String>>();
     let args = args.iter().map(|x| x.as_str()).collect::<Vec<&str>>();

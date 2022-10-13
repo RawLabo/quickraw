@@ -1,8 +1,7 @@
 //! Contains all the functions needed to export image.
-//! 
+//!
 use super::*;
 use crate::raw::{Orientation, RawImage};
-
 
 /// Errors cover issues during raw reading and image exporting.
 #[derive(Error, Debug)]
@@ -62,8 +61,11 @@ impl Export {
     pub fn export_8bit_image(&self) -> (Vec<u8>, usize, usize) {
         self.export_image_data(Self::cast_u16_u8)
     }
-    
-    #[fn_util::bench(demosaicing_with_postprocess)]
+
+    #[cfg_attr(
+        not(feature = "wasm-bindgen"),
+        fn_util::bench(demosaicing_with_postprocess)
+    )]
     fn export_image_data<T>(&self, cast_fn: fn(u16) -> T) -> (Vec<T>, usize, usize) {
         match self.output.demosaicing_method {
             DemosaicingMethod::None => self
@@ -95,7 +97,6 @@ impl Export {
             .map_err(|err| quickexif::parsed_info::Error::from(err).into())
     }
 }
-
 
 /// Enables image rotation and different image types output available.
 #[cfg(feature = "image")]
@@ -135,7 +136,7 @@ pub mod image_export {
     }
 
     impl Export {
-        #[fn_util::bench(writing_file)]
+        #[cfg_attr(not(feature = "wasm-bindgen"), fn_util::bench(writing_file))]
         fn write_to_file<T: 'static + image::Primitive>(
             &self,
             path: &String,
@@ -173,13 +174,10 @@ pub mod image_export {
         }
 
         /// Exports the thumbnail image from raw to the path
-        pub fn export_thumbnail_to_file(
-            input_path: &str,
-            output_path: &str,
-        ) -> Result<(), Error> {
+        pub fn export_thumbnail_to_file(input_path: &str, output_path: &str) -> Result<(), Error> {
             let buffer = decode::get_buffer_from_file(input_path)?;
             let (thumbnail, orientation) = decode::get_thumbnail(buffer.as_slice())?;
-    
+
             match orientation {
                 Orientation::Horizontal => {
                     let mut f = File::create(output_path)
@@ -191,19 +189,19 @@ pub mod image_export {
                     let img = image::load_from_memory(thumbnail).map_err(|_| {
                         Error::CannotReadThumbnail(thumbnail.len(), input_path.to_owned())
                     })?;
-    
+
                     let img = match orientation {
                         Orientation::Rotate90 => imageops::rotate90(&img),
                         Orientation::Rotate180 => imageops::rotate180(&img),
                         Orientation::Rotate270 => imageops::rotate270(&img),
                         _ => img.to_rgba8(),
                     };
-    
+
                     img.save(output_path)
                         .map_err(|_| Error::ErrorWhenExportingFile(output_path.to_owned()))?;
                 }
             }
-    
+
             Ok(())
         }
 
