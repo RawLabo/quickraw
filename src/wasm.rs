@@ -21,7 +21,7 @@ impl Image {
 #[wasm_bindgen]
 pub fn load_image(input: Vec<u8>) -> Image {
     let export = Export::new(
-        Input::ByBuffer(input.clone()),
+        Input::ByBuffer(input),
         Output::new(
             DemosaicingMethod::Linear,
             data::XYZ2SRGB,
