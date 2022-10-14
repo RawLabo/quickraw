@@ -11,15 +11,20 @@ pub(super) fn get_buffer_from_file(path: &str) -> Result<Vec<u8>, RawFileReading
         .metadata()
         .map_err(|_| RawFileReadingError::FileMetadataReadingError(path.to_owned()))?
         .len() as usize;
-    let mut buffer = vec![0u8; len + 16]; // + 16 is for BitPumpMSB fix
+    let mut buffer = vec![0u8; len]; 
     f.read(&mut buffer)
         .map_err(|_| RawFileReadingError::FileContentReadingError(path.to_owned()))?;
 
+    Ok(buffer)
+}
+fn prepare_buffer(mut buffer: Vec<u8>) -> Vec<u8> {
+    buffer.extend([0u8;16]); // + 16 is for BitPumpMSB fix
+
     if buffer[..4] == [0x46, 0x55, 0x4a, 0x49] {
         // fuji raw fix
-        Ok(buffer.drain(148..).collect())
+        buffer.drain(148..).collect()
     } else {
-        Ok(buffer)
+        buffer
     }
 }
 
@@ -32,6 +37,8 @@ pub fn new_image_from_file(path: &str) -> Result<RawImage, RawFileReadingError> 
 
 /// Gets `RawImage` from a buffer
 pub fn new_image_from_buffer(buffer: Vec<u8>) -> Result<RawImage, RawFileReadingError> {
+    let buffer = prepare_buffer(buffer);
+
     let rule = &utility::BASIC_INFO_RULE;
     let decoder_select_info = quickexif::parse(&buffer, rule)?;
 
