@@ -1,6 +1,6 @@
 use super::super::data;
 use super::*;
-use crate::raw::RawImage;
+use crate::raw::DecodedImage;
 use crate::RawFileReadingError;
 
 fn prepare(
@@ -98,7 +98,7 @@ pub(in super::super) fn select_and_decode_thumbnail(
 pub(in super::super) fn select_and_decode(
     file_buffer: &[u8],
     basic_info: quickexif::ParsedInfo,
-) -> Result<RawImage, RawFileReadingError> {
+) -> Result<DecodedImage, RawFileReadingError> {
     let (make, dng_version, cam_matrix) = prepare(&basic_info, false)?;
 
     macro_rules! decode {
@@ -115,7 +115,7 @@ pub(in super::super) fn select_and_decode(
             let white_balance = decoder.get_white_balance()?;
             let image = decoder.decode_with_preprocess(file_buffer)?;
 
-            RawImage::new(
+            DecodedImage::new(
                 image,
                 width,
                 height,
@@ -127,7 +127,7 @@ pub(in super::super) fn select_and_decode(
         }};
     }
 
-    let raw_image = match dng_version {
+    let decoded_image = match dng_version {
         None => match make {
             "NIKON" | "NIKON CORPORATION" => Ok(decode!(nikon)),
             "SONY" => Ok(decode!(sony)),
@@ -139,5 +139,5 @@ pub(in super::super) fn select_and_decode(
         Some(_version) => Ok(decode!(adobe)),
     }?;
 
-    Ok(raw_image)
+    Ok(decoded_image)
 }

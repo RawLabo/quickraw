@@ -1,5 +1,5 @@
 mod interp;
-mod raw_image;
+mod impls;
 mod renderer;
 
 #[derive(Debug)]
@@ -38,7 +38,7 @@ pub struct Crop {
     pub width: u32,
     pub height: u32,
 }
-pub struct RawImage {
+pub struct DecodedImage {
     pub cfa_pattern: CFAPattern,
     pub width: usize,
     pub height: usize,

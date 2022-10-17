@@ -1,6 +1,6 @@
 use super::*;
 
-impl RawImage {
+impl DecodedImage {
     pub(crate) fn new(
         image: Vec<u16>,
         width: usize,
@@ -10,7 +10,7 @@ impl RawImage {
         orientation: Orientation,
         (white_balance, cam_matrix): ([i32;3], [f32;9])
     ) -> Self {
-        RawImage {
+        DecodedImage {
             cfa_pattern,
             width,
             height,

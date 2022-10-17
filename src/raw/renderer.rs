@@ -28,7 +28,7 @@ impl PixelInfo {
         }
     }
 }
-impl RawImage {
+impl DecodedImage {
     pub(crate) fn super_pixel_render<T>(&self, cc: &ColorConversion, cast_fn: fn(u16) -> T) -> (Vec<T>, usize, usize) {
         let image = self.image.as_slice();
         let w = self.width;

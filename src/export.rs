@@ -1,7 +1,7 @@
 //! Contains all the functions needed to export image.
 //!
 use super::*;
-use crate::raw::{Orientation, RawImage};
+use crate::raw::{Orientation, DecodedImage};
 
 /// Errors cover issues during raw reading and image exporting.
 #[derive(Error, Debug)]
@@ -21,7 +21,7 @@ pub enum Error {
 /// Exports the rendered result.
 pub struct Export {
     color_conversion: ColorConversion,
-    raw_image: RawImage,
+    decoded_image: DecodedImage,
     output: Output,
 }
 
@@ -33,16 +33,16 @@ impl Export {
         (x / 256) as u8
     }
     pub fn new(input: Input, output: Output) -> Result<Self, RawFileReadingError> {
-        let raw_image = match input {
+        let decoded_image = match input {
             Input::ByFile(file) => decode::new_image_from_file(file),
             Input::ByBuffer(buffer) => decode::new_image_from_buffer(buffer),
         }?;
 
-        let color_conversion = ColorConversion::new(&raw_image, output.color_space, output.gamma);
+        let color_conversion = ColorConversion::new(&decoded_image, output.color_space, output.gamma);
 
         Ok(Export {
             color_conversion,
-            raw_image,
+            decoded_image,
             output,
         })
     }
@@ -69,13 +69,13 @@ impl Export {
     fn export_image_data<T>(&self, cast_fn: fn(u16) -> T) -> (Vec<T>, usize, usize) {
         match self.output.demosaicing_method {
             DemosaicingMethod::None => self
-                .raw_image
+                .decoded_image
                 .no_demosaic_render(&self.color_conversion, cast_fn),
             DemosaicingMethod::SuperPixel => self
-                .raw_image
+                .decoded_image
                 .super_pixel_render(&self.color_conversion, cast_fn),
             DemosaicingMethod::Linear => self
-                .raw_image
+                .decoded_image
                 .linear_render(&self.color_conversion, cast_fn),
         }
     }
@@ -153,13 +153,13 @@ pub mod image_export {
                         Error::ImageBufferError(stringify!(T).to_owned(), len, width, height)
                     })?;
 
-            let image = match (&self.raw_image.crop, self.output.auto_crop) {
+            let image = match (&self.decoded_image.crop, self.output.auto_crop) {
                 (Some(c), true) => {
                     imageops::crop(&mut image, c.x, c.y, c.width, c.height).to_image()
                 }
                 _ => image,
             };
-            let image = match (&self.raw_image.orientation, self.output.auto_rotate) {
+            let image = match (&self.decoded_image.orientation, self.output.auto_rotate) {
                 (Orientation::Horizontal, _) | (_, false) => image,
                 (Orientation::Rotate90, true) => imageops::rotate90(&image),
                 (Orientation::Rotate180, true) => imageops::rotate180(&image),

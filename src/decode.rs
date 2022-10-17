@@ -1,6 +1,6 @@
 use std::{fs::File, io::Read};
 
-use raw::{Orientation, RawImage};
+use raw::{Orientation, DecodedImage};
 
 use super::*;
 
@@ -30,21 +30,21 @@ fn prepare_buffer(mut buffer: Vec<u8>) -> Vec<u8> {
 
 /// Gets `RawImage` from a file
 #[cfg_attr(not(feature = "wasm-bindgen"), fn_util::bench(decoding))]
-pub fn new_image_from_file(path: &str) -> Result<RawImage, RawFileReadingError> {
+pub fn new_image_from_file(path: &str) -> Result<DecodedImage, RawFileReadingError> {
     let buffer = get_buffer_from_file(path)?;
     new_image_from_buffer(buffer)
 }
 
 /// Gets `RawImage` from a buffer
-pub fn new_image_from_buffer(buffer: Vec<u8>) -> Result<RawImage, RawFileReadingError> {
+pub fn new_image_from_buffer(buffer: Vec<u8>) -> Result<DecodedImage, RawFileReadingError> {
     let buffer = prepare_buffer(buffer);
 
     let rule = &utility::BASIC_INFO_RULE;
     let decoder_select_info = quickexif::parse(&buffer, rule)?;
 
-    let raw_image = maker::selector::select_and_decode(buffer.as_slice(), decoder_select_info)?;
+    let decoded_image = maker::selector::select_and_decode(buffer.as_slice(), decoder_select_info)?;
 
-    Ok(raw_image)
+    Ok(decoded_image)
 }
 
 pub(super) fn get_exif_info(buffer: &[u8]) -> Result<quickexif::ParsedInfo, RawFileReadingError> {
