@@ -25,7 +25,7 @@ pub fn load_image(input: Vec<u8>) -> Image {
         Output::new(
             DemosaicingMethod::Linear,
             data::XYZ2SRGB,
-            data::GAMMA_SRGB,
+            data::GAMMA_LINEAR,
             OutputType::Raw8,
             false,
             false,

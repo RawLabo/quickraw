@@ -48,12 +48,7 @@ pub(super) fn gen_gamma_lut(gamma: [f32; 2]) -> [u16; 65536] {
     let mut gamma_map = [0u16; 65536];
     for (i, elem) in gamma_map.iter_mut().enumerate() {
         let l = i as f32 / 65535.;
-        let v = if l < 0.018 {
-            gamma[1] * l
-        } else {
-            1.099 * l.powf(gamma[0]) - 0.099
-        };
-        *elem = (v * 65535.) as u16;
+        *elem = (l.powf(gamma[0]) * 65535.) as u16;
     }
     gamma_map
 }
