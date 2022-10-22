@@ -107,6 +107,7 @@ pub(in super::super) fn select_and_decode(
                 quickexif::parse_with_prev_info(file_buffer, &$t::IMAGE_RULE, basic_info)?;
             let width = raw_info.usize("width")?;
             let height = raw_info.usize("height")?;
+            let black_level = raw_info.u16("black_level")? as i32;
 
             let decoder = $t::General::new(raw_info);
             let cfa_pattern = decoder.get_cfa_pattern()?;
@@ -114,16 +115,20 @@ pub(in super::super) fn select_and_decode(
             let orientation = decoder.get_orientation();
             let white_balance = decoder.get_white_balance()?;
             let image = decoder.decode_with_preprocess(file_buffer)?;
+            let scale_factor = decoder.get_bps_scale()? as i32;
 
-            DecodedImage::new(
+            DecodedImage {
                 image,
                 width,
                 height,
                 cfa_pattern,
                 crop,
                 orientation,
-                (white_balance, cam_matrix),
-            )
+                white_balance,
+                cam_matrix,
+                black_level,
+                scale_factor,
+            }
         }};
     }
 

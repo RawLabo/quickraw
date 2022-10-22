@@ -64,6 +64,7 @@ pub mod data;
 mod color;
 mod utility;
 
+mod pass;
 mod maker;
 mod raw;
 mod capi;
@@ -80,7 +81,7 @@ pub use export::Export;
 const BIT_SHIFT: u32 = 13u32;
 
 #[derive(Debug)]
-struct ColorConversion {
+pub struct ColorConversion {
     white_balance: [i32; 3],
     gamma_lut: [u16; 65536],
     color_space: [i32; 9],

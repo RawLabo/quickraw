@@ -88,6 +88,11 @@ impl RawDecoder for General {
         &self.info
     }
 
+    fn get_bps_scale(&self) -> Result<u16, DecodingError> {
+        let result = self.get_white_level_scale()?;
+        Ok(result)
+    }
+
     fn get_crop(&self) -> Option<Crop> {
         let x = self.info.u32("crop_x").ok()?;
         let y = self.info.u32("crop_y").ok()?;

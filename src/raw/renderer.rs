@@ -2,32 +2,6 @@ use crate::ColorConversion;
 
 use super::{interp::*, *};
 
-impl PixelInfo {
-    #[inline(always)]
-    fn new(i: usize, v: u16, w: usize, h: usize) -> Self {
-        let x = i % w;
-        let y = i / w;
-        let is_top = y == 0;
-        let is_left = x == 0;
-        let is_bottom = y == h - 1;
-        let is_right = x == w - 1;
-        let is_column_even = x % 2 == 0;
-        let is_row_even = y % 2 == 0;
-
-        Self {
-            i,
-            v: v as i32,
-            x,
-            y,
-            is_top,
-            is_bottom,
-            is_left,
-            is_right,
-            is_column_even,
-            is_row_even,
-        }
-    }
-}
 impl DecodedImage {
     pub(crate) fn super_pixel_render<T>(&self, cc: &ColorConversion, cast_fn: fn(u16) -> T) -> (Vec<T>, usize, usize) {
         let image = self.image.as_slice();
