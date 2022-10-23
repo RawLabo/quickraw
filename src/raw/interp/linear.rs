@@ -21,31 +21,77 @@ impl Linear {
         let v = v as i32;
         let index = (x % 6, y % 6);
         macro_rules! avg {
-            (137) => {image.avg([i - w, i - 1, i + w])};
-            (056) => {image.avg([i - w - 1, i + w - 1, i + 1])};
-            (238) => {image.avg([i + w + 1,i - 1, i + w + 1])};
-            (157) => {image.avg([i - w,i + 1, i + w])};
-            (17) => {image.avg([i - w,i + w])};
-            (35) => {image.avg([i - 1,i + 1])};
-            (16) => {image.avg([i - w, i + w - 1])};
-            (56) => {image.avg([i + 1, i + w - 1])};
-            (23) => {image.avg([i - w + 1, i - 1])};
-            (05) => {image.avg([i - w - 1, i + 1])};
-            (07) => {image.avg([i - w - 1, i + w])};
-            (27) => {image.avg([i - w + 1, i + w])};
-            (18) => {image.avg([i - w, i + w + 1])};
-            (38) => {image.avg([i - 1, i + w + 1])};
-            (135) => {image.avg([i - w, i - 1, i + 1])};
-            (027) => {image.avg([i - w - 1, i - w + 1, i + w])};
-            (168) => {image.avg([i - w, i + w - 1, i + w + 1])};
-            (357) => {image.avg([i - 1, i + 1, i + w])};
-            (35) => {image.avg([i - 1, i + 1])};
-            (57) => {image.avg([i + 1, i + w])};
-            (37) => {image.avg([i - 1, i + w])};
-            (17) => {image.avg([i - w, i + w])};
+            (137) => {
+                image.avg([i - w, i - 1, i + w])
+            };
+            (056) => {
+                image.avg([i - w - 1, i + w - 1, i + 1])
+            };
+            (238) => {
+                image.avg([i + w + 1, i - 1, i + w + 1])
+            };
+            (157) => {
+                image.avg([i - w, i + 1, i + w])
+            };
+            (17) => {
+                image.avg([i - w, i + w])
+            };
+            (35) => {
+                image.avg([i - 1, i + 1])
+            };
+            (16) => {
+                image.avg([i - w, i + w - 1])
+            };
+            (56) => {
+                image.avg([i + 1, i + w - 1])
+            };
+            (23) => {
+                image.avg([i - w + 1, i - 1])
+            };
+            (05) => {
+                image.avg([i - w - 1, i + 1])
+            };
+            (07) => {
+                image.avg([i - w - 1, i + w])
+            };
+            (27) => {
+                image.avg([i - w + 1, i + w])
+            };
+            (18) => {
+                image.avg([i - w, i + w + 1])
+            };
+            (38) => {
+                image.avg([i - 1, i + w + 1])
+            };
+            (135) => {
+                image.avg([i - w, i - 1, i + 1])
+            };
+            (027) => {
+                image.avg([i - w - 1, i - w + 1, i + w])
+            };
+            (168) => {
+                image.avg([i - w, i + w - 1, i + w + 1])
+            };
+            (357) => {
+                image.avg([i - 1, i + 1, i + w])
+            };
+            (35) => {
+                image.avg([i - 1, i + 1])
+            };
+            (57) => {
+                image.avg([i + 1, i + w])
+            };
+            (37) => {
+                image.avg([i - 1, i + w])
+            };
+            (17) => {
+                image.avg([i - w, i + w])
+            };
         }
         macro_rules! p {
-            ($i:expr) => { image.get_pixel($i) }
+            ($i:expr) => {
+                image.get_pixel($i)
+            };
         }
 
         match (is_top, is_left, is_bottom, is_right, index) {
@@ -91,19 +137,19 @@ impl Linear {
             (false, false, false, false, (4, 5)) => (avg!(27), v, avg!(56)),
             (false, false, false, false, (5, 5)) => (avg!(168), avg!(357), v),
 
-            (true, _, _, _ , (0, _)) => (v, p!(i + w), p!(i + 1)),
-            (true, _, _, _ , (1, _)) => (p!(i - 1), avg!(57), v),
-            (true, _, _, _ , (2, _)) => (p!(i + w), v, avg!(35)),
-            (true, _, _, _ , (3, _)) => (p!(i + 1), avg!(37), v),
-            (true, _, _, _ , (4, _)) => (v, p!(i + w), p!(i - 1)),
-            (true, _, _, _ , (5, _)) => (p!(i - 1), v, p!(i + w)),
+            (true, _, _, _, (0, _)) => (v, p!(i + w), p!(i + 1)),
+            (true, _, _, _, (1, _)) => (p!(i - 1), avg!(57), v),
+            (true, _, _, _, (2, _)) => (p!(i + w), v, avg!(35)),
+            (true, _, _, _, (3, _)) => (p!(i + 1), avg!(37), v),
+            (true, _, _, _, (4, _)) => (v, p!(i + w), p!(i - 1)),
+            (true, _, _, _, (5, _)) => (p!(i - 1), v, p!(i + w)),
 
-            (_, _, true, _ , (0, _)) => (p!(i - w + 2), v, p!(i + 2)),
-            (_, _, true, _ , (1, _)) => (p!(i + 1), v, p!(i - w + 1)),
-            (_, _, true, _ , (2, _)) => (v, avg!(35), p!(i - w)),
-            (_, _, true, _ , (3, _)) => (p!(i - 1), v, p!(i - w - 1)),
-            (_, _, true, _ , (4, _)) => (p!(i - w + 1), v, p!(i + 1)),
-            (_, _, true, _ , (5, _)) => (p!(i - w), p!(i - 1), v),
+            (_, _, true, _, (0, _)) => (p!(i - w + 2), v, p!(i + 2)),
+            (_, _, true, _, (1, _)) => (p!(i + 1), v, p!(i - w + 1)),
+            (_, _, true, _, (2, _)) => (v, avg!(35), p!(i - w)),
+            (_, _, true, _, (3, _)) => (p!(i - 1), v, p!(i - w - 1)),
+            (_, _, true, _, (4, _)) => (p!(i - w + 1), v, p!(i + 1)),
+            (_, _, true, _, (5, _)) => (p!(i - w), p!(i - 1), v),
 
             (_, true, _, _, (_, 0)) => (v, p!(i + w), p!(i + 1)),
             (_, true, _, _, (_, 1)) => (p!(i - w), v, p!(i - w + 1)),
@@ -118,7 +164,7 @@ impl Linear {
             (_, _, _, true, (_, 4)) => (v, p!(i - 1), p!(i + w)),
             (_, _, _, true, (_, 5)) => (p!(i - w), p!(i - 1), v),
 
-            _ => (0, 0, 0)
+            _ => (0, 0, 0),
         }
     }
 
@@ -142,31 +188,77 @@ impl Linear {
         let v = v as i32;
         let index = (x % 6, y % 6);
         macro_rules! avg {
-            (137) => {image.avg([i - w, i - 1, i + w])};
-            (056) => {image.avg([i - w - 1, i + w - 1, i + 1])};
-            (238) => {image.avg([i + w + 1,i - 1, i + w + 1])};
-            (157) => {image.avg([i - w,i + 1, i + w])};
-            (17) => {image.avg([i - w,i + w])};
-            (35) => {image.avg([i - 1,i + 1])};
-            (16) => {image.avg([i - w, i + w - 1])};
-            (56) => {image.avg([i + 1, i + w - 1])};
-            (23) => {image.avg([i - w + 1, i - 1])};
-            (05) => {image.avg([i - w - 1, i + 1])};
-            (07) => {image.avg([i - w - 1, i + w])};
-            (27) => {image.avg([i - w + 1, i + w])};
-            (18) => {image.avg([i - w, i + w + 1])};
-            (38) => {image.avg([i - 1, i + w + 1])};
-            (135) => {image.avg([i - w, i - 1, i + 1])};
-            (027) => {image.avg([i - w - 1, i - w + 1, i + w])};
-            (168) => {image.avg([i - w, i + w - 1, i + w + 1])};
-            (357) => {image.avg([i - 1, i + 1, i + w])};
-            (35) => {image.avg([i - 1, i + 1])};
-            (57) => {image.avg([i + 1, i + w])};
-            (37) => {image.avg([i - 1, i + w])};
-            (17) => {image.avg([i - w, i + w])};
+            (137) => {
+                image.avg([i - w, i - 1, i + w])
+            };
+            (056) => {
+                image.avg([i - w - 1, i + w - 1, i + 1])
+            };
+            (238) => {
+                image.avg([i + w + 1, i - 1, i + w + 1])
+            };
+            (157) => {
+                image.avg([i - w, i + 1, i + w])
+            };
+            (17) => {
+                image.avg([i - w, i + w])
+            };
+            (35) => {
+                image.avg([i - 1, i + 1])
+            };
+            (16) => {
+                image.avg([i - w, i + w - 1])
+            };
+            (56) => {
+                image.avg([i + 1, i + w - 1])
+            };
+            (23) => {
+                image.avg([i - w + 1, i - 1])
+            };
+            (05) => {
+                image.avg([i - w - 1, i + 1])
+            };
+            (07) => {
+                image.avg([i - w - 1, i + w])
+            };
+            (27) => {
+                image.avg([i - w + 1, i + w])
+            };
+            (18) => {
+                image.avg([i - w, i + w + 1])
+            };
+            (38) => {
+                image.avg([i - 1, i + w + 1])
+            };
+            (135) => {
+                image.avg([i - w, i - 1, i + 1])
+            };
+            (027) => {
+                image.avg([i - w - 1, i - w + 1, i + w])
+            };
+            (168) => {
+                image.avg([i - w, i + w - 1, i + w + 1])
+            };
+            (357) => {
+                image.avg([i - 1, i + 1, i + w])
+            };
+            (35) => {
+                image.avg([i - 1, i + 1])
+            };
+            (57) => {
+                image.avg([i + 1, i + w])
+            };
+            (37) => {
+                image.avg([i - 1, i + w])
+            };
+            (17) => {
+                image.avg([i - w, i + w])
+            };
         }
         macro_rules! p {
-            ($i:expr) => { image.get_pixel($i) }
+            ($i:expr) => {
+                image.get_pixel($i)
+            };
         }
 
         match (is_top, is_left, is_bottom, is_right, index) {
@@ -212,19 +304,19 @@ impl Linear {
             (false, false, false, false, (4, 4)) => (avg!(27), v, avg!(56)),
             (false, false, false, false, (5, 4)) => (avg!(168), avg!(357), v),
 
-            (true, _, _, _ , (0, _)) => (p!(i + 2), v, p!(i + w + 2)),
-            (true, _, _, _ , (1, _)) => (p!(i + 1), v, p!(i + w + 1)),
-            (true, _, _, _ , (2, _)) => (v, avg!(35), p!(i + w)),
-            (true, _, _, _ , (3, _)) => (p!(i - 1), v, p!(i + w - 1)),
-            (true, _, _, _ , (4, _)) => (p!(i + w + 1), v, p!(i + 1)),
-            (true, _, _, _ , (5, _)) => (p!(i + w), p!(i - 1), v),
+            (true, _, _, _, (0, _)) => (p!(i + 2), v, p!(i + w + 2)),
+            (true, _, _, _, (1, _)) => (p!(i + 1), v, p!(i + w + 1)),
+            (true, _, _, _, (2, _)) => (v, avg!(35), p!(i + w)),
+            (true, _, _, _, (3, _)) => (p!(i - 1), v, p!(i + w - 1)),
+            (true, _, _, _, (4, _)) => (p!(i + w + 1), v, p!(i + 1)),
+            (true, _, _, _, (5, _)) => (p!(i + w), p!(i - 1), v),
 
-            (_, _, true, _ , (0, _)) => (v, p!(i - w), p!(i + 1)),
-            (_, _, true, _ , (1, _)) => (p!(i - 1), p!(i - w), v),
-            (_, _, true, _ , (2, _)) => (p!(i - w), v, avg!(35)),
-            (_, _, true, _ , (3, _)) => (p!(i + 1), p!(i - w), v),
-            (_, _, true, _ , (4, _)) => (v, p!(i - w), p!(i - 1)),
-            (_, _, true, _ , (5, _)) => (p!(i - 1), v, p!(i - w)),
+            (_, _, true, _, (0, _)) => (v, p!(i - w), p!(i + 1)),
+            (_, _, true, _, (1, _)) => (p!(i - 1), p!(i - w), v),
+            (_, _, true, _, (2, _)) => (p!(i - w), v, avg!(35)),
+            (_, _, true, _, (3, _)) => (p!(i + 1), p!(i - w), v),
+            (_, _, true, _, (4, _)) => (v, p!(i - w), p!(i - 1)),
+            (_, _, true, _, (5, _)) => (p!(i - 1), v, p!(i - w)),
 
             (_, true, _, _, (_, 0)) => (p!(i + 2), v, p!(i + w + 2)),
             (_, true, _, _, (_, 1)) => (p!(i + w + 1), v, p!(i + w)),
@@ -239,11 +331,10 @@ impl Linear {
             (_, _, _, true, (_, 4)) => (p!(i - w), p!(i - 1), v),
             (_, _, _, true, (_, 5)) => (p!(i - 1), v, p!(i - w)),
 
-            _ => (0, 0, 0)
+            _ => (0, 0, 0),
         }
     }
 }
-
 
 impl Interp for Linear {
     #[inline(always)]
@@ -263,7 +354,15 @@ impl Interp for Linear {
         image: &[u16],
         w: usize,
     ) -> (i32, i32, i32) {
-        match (is_top, is_bottom, is_left, is_right, is_column_even, is_row_even) {
+        let v = v as i32;
+        match (
+            is_top,
+            is_bottom,
+            is_left,
+            is_right,
+            is_column_even,
+            is_row_even,
+        ) {
             // top left corner
             (true, _, true, _, _, _) => (v, image.avg([i + 1, i + w]), image.get_pixel(i + w + 1)),
             // top right corner
@@ -273,17 +372,29 @@ impl Interp for Linear {
             // bottom right corner
             (_, true, _, true, _, _) => (image.get_pixel(i - w - 1), image.avg([i - w, i - 1]), v),
             // top edge
-            (true, _, _, _, true, _) => (v, image.avg([i - 1, i + w, i + 1]), image.avg([i + w - 1, i + w + 1])),
+            (true, _, _, _, true, _) => (
+                v,
+                image.avg([i - 1, i + w, i + 1]),
+                image.avg([i + w - 1, i + w + 1]),
+            ),
             (true, _, _, _, false, _) => (image.avg([i - 1, i + 1]), v, image.get_pixel(i + w)),
             // bottom edge
             (_, true, _, _, true, _) => (image.get_pixel(i - w), v, image.avg([i - 1, i + 1])),
             (_, true, _, _, false, _) => (image.get_pixel(i - w - 1), image.avg([i - w, i - 1]), v),
             // left edge
-            (_, _, true, _, _, true) => (v, image.avg([i - w, i + 1, i + w]), image.avg([i - w + 1, i + w + 1])),
+            (_, _, true, _, _, true) => (
+                v,
+                image.avg([i - w, i + 1, i + w]),
+                image.avg([i - w + 1, i + w + 1]),
+            ),
             (_, _, true, _, _, false) => (image.avg([i - w, i + w]), v, image.get_pixel(i + 1)),
             // right edge
             (_, _, _, true, _, true) => (image.get_pixel(i - 1), v, image.get_pixel(i + w)),
-            (_, _, _, true, _, false) => (image.avg([i - w - 1, i + w - 1]), image.avg([i - w, i + w, i - 1]), v),
+            (_, _, _, true, _, false) => (
+                image.avg([i - w - 1, i + w - 1]),
+                image.avg([i - w, i + w, i - 1]),
+                v,
+            ),
             // red
             (_, _, _, _, true, true) => (
                 v,
@@ -320,7 +431,15 @@ impl Interp for Linear {
         image: &[u16],
         w: usize,
     ) -> (i32, i32, i32) {
-        match (is_top, is_bottom, is_left, is_right, is_column_even, is_row_even) {
+        let v = v as i32;
+        match (
+            is_top,
+            is_bottom,
+            is_left,
+            is_right,
+            is_column_even,
+            is_row_even,
+        ) {
             // top left corner
             (true, _, true, _, _, _) => (image.get_pixel(i + w + 1), image.avg([i + 1, i + w]), v),
             // top right corner
@@ -330,17 +449,29 @@ impl Interp for Linear {
             // bottom right corner
             (_, true, _, true, _, _) => (v, image.avg([i - w, i - 1]), image.get_pixel(i - w - 1)),
             // top edge
-            (true, _, _, _, true, _) => (image.avg([i + w - 1, i + w + 1]), image.avg([i - 1, i + w, i + 1]), v),
+            (true, _, _, _, true, _) => (
+                image.avg([i + w - 1, i + w + 1]),
+                image.avg([i - 1, i + w, i + 1]),
+                v,
+            ),
             (true, _, _, _, false, _) => (image.get_pixel(i + w), v, image.avg([i - 1, i + 1])),
             // bottom edge
             (_, true, _, _, true, _) => (image.avg([i - 1, i + 1]), v, image.get_pixel(i - w)),
             (_, true, _, _, false, _) => (v, image.avg([i - w, i - 1]), image.get_pixel(i - w - 1)),
             // left edge
-            (_, _, true, _, _, true) => (image.avg([i - w + 1, i + w + 1]), image.avg([i - w, i + 1, i + w]), v),
+            (_, _, true, _, _, true) => (
+                image.avg([i - w + 1, i + w + 1]),
+                image.avg([i - w, i + 1, i + w]),
+                v,
+            ),
             (_, _, true, _, _, false) => (image.get_pixel(i + 1), v, image.avg([i - w, i + w])),
             // right edge
             (_, _, _, true, _, true) => (image.get_pixel(i + w), v, image.get_pixel(i - 1)),
-            (_, _, _, true, _, false) => (v, image.avg([i - w, i + w, i - 1]), image.avg([i - w - 1, i + w - 1])),
+            (_, _, _, true, _, false) => (
+                v,
+                image.avg([i - w, i + w, i - 1]),
+                image.avg([i - w - 1, i + w - 1]),
+            ),
             // blue
             (_, _, _, _, true, true) => (
                 image.avg([i - w - 1, i - w + 1, i + w - 1, i + w + 1]),
@@ -377,7 +508,15 @@ impl Interp for Linear {
         image: &[u16],
         w: usize,
     ) -> (i32, i32, i32) {
-        match (is_top, is_bottom, is_left, is_right, is_column_even, is_row_even) {
+        let v = v as i32;
+        match (
+            is_top,
+            is_bottom,
+            is_left,
+            is_right,
+            is_column_even,
+            is_row_even,
+        ) {
             // top left corner
             (true, _, true, _, _, _) => (image.get_pixel(i + 1), v, image.get_pixel(i + w)),
             // top right corner
@@ -388,15 +527,31 @@ impl Interp for Linear {
             (_, true, _, true, _, _) => (image.get_pixel(i - w), v, image.get_pixel(i - 1)),
             // top edge
             (true, _, _, _, true, _) => (image.avg([i - 1, i + 1]), v, image.get_pixel(i + w)),
-            (true, _, _, _, false, _) => (v, image.avg([i - 1, i + 1, i + w]), image.avg([i + w - 1, i + w + 1])),
+            (true, _, _, _, false, _) => (
+                v,
+                image.avg([i - 1, i + 1, i + w]),
+                image.avg([i + w - 1, i + w + 1]),
+            ),
             // bottom edge
-            (_, true, _, _, true, _) => (image.avg([i - w - 1, i - w + 1]), image.avg([i - 1, i + 1, i - w]), v),
+            (_, true, _, _, true, _) => (
+                image.avg([i - w - 1, i - w + 1]),
+                image.avg([i - 1, i + 1, i - w]),
+                v,
+            ),
             (_, true, _, _, false, _) => (image.get_pixel(i - w), v, image.avg([i - 1, i + 1])),
             // left edge
             (_, _, true, _, _, true) => (image.get_pixel(i + 1), v, image.avg([i - w, i + w])),
-            (_, _, true, _, _, false) => (image.avg([i - w + 1, i + w + 1]), image.avg([i - w, i + w, i + 1]), v),
+            (_, _, true, _, _, false) => (
+                image.avg([i - w + 1, i + w + 1]),
+                image.avg([i - w, i + w, i + 1]),
+                v,
+            ),
             // right edge
-            (_, _, _, true, _, true) => (v, image.avg([i - w, i - 1, i + w]), image.avg([i - w - 1, i + w - 1])),
+            (_, _, _, true, _, true) => (
+                v,
+                image.avg([i - w, i - 1, i + w]),
+                image.avg([i - w - 1, i + w - 1]),
+            ),
             (_, _, _, true, _, false) => (image.avg([i - w, i + w]), v, image.get_pixel(i - 1)),
             // green1
             (_, _, _, _, true, true) => (image.avg([i - 1, i + 1]), v, image.avg([i - w, i + w])),
@@ -434,7 +589,15 @@ impl Interp for Linear {
         image: &[u16],
         w: usize,
     ) -> (i32, i32, i32) {
-        match (is_top, is_bottom, is_left, is_right, is_column_even, is_row_even) {
+        let v = v as i32;
+        match (
+            is_top,
+            is_bottom,
+            is_left,
+            is_right,
+            is_column_even,
+            is_row_even,
+        ) {
             // top left corner
             (true, _, true, _, _, _) => (image.get_pixel(i + w), v, image.get_pixel(i + 1)),
             // top right corner
@@ -445,15 +608,31 @@ impl Interp for Linear {
             (_, true, _, true, _, _) => (image.get_pixel(i - 1), v, image.get_pixel(i - w)),
             // top edge
             (true, _, _, _, true, _) => (image.get_pixel(i + w), v, image.avg([i - 1, i + 1])),
-            (true, _, _, _, false, _) => (image.avg([i + w - 1, i + w + 1]), image.avg([i - 1, i + 1, i + w]), v),
+            (true, _, _, _, false, _) => (
+                image.avg([i + w - 1, i + w + 1]),
+                image.avg([i - 1, i + 1, i + w]),
+                v,
+            ),
             // bottom edge
-            (_, true, _, _, true, _) => (v, image.avg([i - 1, i + 1, i - w]), image.avg([i - w - 1, i - w + 1])),
+            (_, true, _, _, true, _) => (
+                v,
+                image.avg([i - 1, i + 1, i - w]),
+                image.avg([i - w - 1, i - w + 1]),
+            ),
             (_, true, _, _, false, _) => (image.avg([i - 1, i + 1]), v, image.get_pixel(i - w)),
             // left edge
             (_, _, true, _, _, true) => (image.avg([i - w, i + w]), v, image.get_pixel(i + 1)),
-            (_, _, true, _, _, false) => (v, image.avg([i - w, i + w, i + 1]), image.avg([i - w + 1, i + w + 1])),
+            (_, _, true, _, _, false) => (
+                v,
+                image.avg([i - w, i + w, i + 1]),
+                image.avg([i - w + 1, i + w + 1]),
+            ),
             // right edge
-            (_, _, _, true, _, true) => (image.avg([i - w - 1, i + w - 1]), image.avg([i - w, i - 1, i + w]), v),
+            (_, _, _, true, _, true) => (
+                image.avg([i - w - 1, i + w - 1]),
+                image.avg([i - w, i - 1, i + w]),
+                v,
+            ),
             (_, _, _, true, _, false) => (image.get_pixel(i - 1), v, image.avg([i - w, i + w])),
             // green2
             (_, _, _, _, true, true) => (image.avg([i - w, i + w]), v, image.avg([i - 1, i + 1])),

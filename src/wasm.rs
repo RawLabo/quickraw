@@ -15,13 +15,13 @@ extern "C" {
 pub struct Image {
     pub width: usize,
     pub height: usize,
-    data: Vec<u8>,
+    data: Vec<u16>,
 }
 
 #[wasm_bindgen]
 impl Image {
     #[wasm_bindgen(getter)]
-    pub fn data(self) -> Vec<u8> {
+    pub fn data(self) -> Vec<u16> {
         self.data
     }
 }
@@ -38,7 +38,7 @@ pub fn load_image(input: Vec<u8>) -> Image {
     let white_balance = decoded_image
         .white_balance
         .mul(1 << (BIT_SHIFT - utility::log2(decoded_image.white_balance[1])));
-    let gamma_lut = gen_gamma_lut(0.45);
+    // let gamma_lut = gen_gamma_lut(0.45);
 
     let image = decoded_image.image;
     let width = decoded_image.width;
@@ -50,13 +50,13 @@ pub fn load_image(input: Vec<u8>) -> Image {
             ..enumerate()
             .pixel_info(width, height)
             .demosaic(&image, width)
+            .u16rgb_to_i32rgb()
             // .sub_black_level(decoded_image.black_level)
             // .level_scale_up(decoded_image.scale_factor)
             .white_balance_fix(&white_balance)
             .color_convert(&color_space)
-            .gamma_correct(&gamma_lut)
+            // .gamma_correct(&gamma_lut)
             ..flatten()
-            .to8bit()
     );
 
     Image {

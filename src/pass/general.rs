@@ -10,7 +10,12 @@ pub fn pixel_info(
 }
 
 #[inline(always)]
-pub fn to8bit(iter: impl Iterator<Item = u16>) -> impl Iterator<Item = u8> {
+pub fn u16rgb_to_i32rgb(iter: impl Iterator<Item = [u16; 3]>) -> impl Iterator<Item = [i32; 3]> {
+    iter.map(|[r, g, b]| [r as i32, g as i32, b as i32])
+}
+
+#[inline(always)]
+pub fn u16_to_u8(iter: impl Iterator<Item = u16>) -> impl Iterator<Item = u8> {
     iter.map(|v| (v / 256) as u8)
 }
 

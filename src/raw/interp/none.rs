@@ -18,6 +18,7 @@ impl Interp for None {
         _: &[u16],
         _: usize,
     ) -> (i32, i32, i32) {
+        let v = v as i32;
         match (is_column_even, is_row_even) {
             (true, true) => (v, 0, 0),
             (false, true) => (0, v, 0),
@@ -43,6 +44,7 @@ impl Interp for None {
         _: &[u16],
         _: usize,
     ) -> (i32, i32, i32) {
+        let v = v as i32;
         match (is_column_even, is_row_even) {
             (true, true) => (0, 0, v),
             (false, true) => (0, v, 0),
@@ -67,6 +69,7 @@ impl Interp for None {
         _: &[u16],
         _: usize,
     ) -> (i32, i32, i32) {
+        let v = v as i32;
         match (is_column_even, is_row_even) {
             (true, true) => (0, v, 0),
             (false, true) => (v, 0, 0),
@@ -92,6 +95,7 @@ impl Interp for None {
         _: &[u16],
         _: usize,
     ) -> (i32, i32, i32) {
+        let v = v as i32;
         match (is_column_even, is_row_even) {
             (true, true) => (0, v, 0),
             (false, true) => (0, 0, v),

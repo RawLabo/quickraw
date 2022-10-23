@@ -4,7 +4,7 @@ mod renderer;
 #[derive(Debug)]
 pub struct PixelInfo {
     pub i: usize,
-    pub v: i32,
+    pub v: u16,
     pub x: usize,
     pub y: usize,
     pub is_top: bool,
@@ -29,7 +29,7 @@ impl PixelInfo {
 
         Self {
             i,
-            v: v as i32,
+            v,
             x,
             y,
             is_top,
