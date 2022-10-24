@@ -16,6 +16,8 @@ pub struct Image {
     pub width: usize,
     pub height: usize,
     data: Vec<u16>,
+    wb: [f32;3],
+    color_matrix: [f32;9]
 }
 
 #[wasm_bindgen]
@@ -23,6 +25,14 @@ impl Image {
     #[wasm_bindgen(getter)]
     pub fn data(self) -> Vec<u16> {
         self.data
+    }
+    #[wasm_bindgen(getter)]
+    pub fn wb(&self) -> Vec<f32> {
+        self.wb.to_vec()
+    }
+    #[wasm_bindgen(getter)]
+    pub fn color_matrix(&self) -> Vec<f32> {
+        self.color_matrix.to_vec()
     }
 }
 
@@ -34,10 +44,25 @@ pub fn load_image(input: Vec<u8>) -> Image {
 
     let color_space = data::XYZ2SRGB;
     let color_space = utility::matrix3_mul(&color_space, &decoded_image.cam_matrix);
+    
+    let color_matrix = color_space;
+
     let color_space = color_space.mul(1 << BIT_SHIFT);
+
+    let wb = [
+        decoded_image
+        .white_balance[0] as f32 / decoded_image
+        .white_balance[1] as f32,
+        1f32,
+        decoded_image
+        .white_balance[2] as f32 / decoded_image
+        .white_balance[1] as f32
+    ];
+
     let white_balance = decoded_image
         .white_balance
         .mul(1 << (BIT_SHIFT - utility::log2(decoded_image.white_balance[1])));
+    
     // let gamma_lut = gen_gamma_lut(0.45);
 
     let image = decoded_image.image;
@@ -50,11 +75,11 @@ pub fn load_image(input: Vec<u8>) -> Image {
             ..enumerate()
             .pixel_info(width, height)
             .demosaic(&image, width)
-            .u16rgb_to_i32rgb()
+            // .u16rgb_to_i32rgb()
             // .sub_black_level(decoded_image.black_level)
             // .level_scale_up(decoded_image.scale_factor)
-            .white_balance_fix(&white_balance)
-            .color_convert(&color_space)
+            // .white_balance_fix(&white_balance)
+            // .color_convert(&color_space)
             // .gamma_correct(&gamma_lut)
             ..flatten()
     );
@@ -63,6 +88,8 @@ pub fn load_image(input: Vec<u8>) -> Image {
         data,
         width,
         height,
+        wb,
+        color_matrix
     }
 }
 
