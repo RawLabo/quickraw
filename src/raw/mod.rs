@@ -53,10 +53,10 @@ pub enum CFAPattern {
     XTrans1, // GGRGGB
 }
 pub enum Orientation {
-    Horizontal,
-    Rotate90,
-    Rotate180,
-    Rotate270,
+    Horizontal = 0,
+    Rotate90 = 90,
+    Rotate180 = 180,
+    Rotate270 = 270,
 }
 pub struct Crop {
     pub x: u32,

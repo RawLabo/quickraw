@@ -15,6 +15,7 @@ extern "C" {
 pub struct Image {
     pub width: usize,
     pub height: usize,
+    pub rotation: isize,
     data: Vec<u16>,
     wb: [f32; 3],
     color_matrix: [f32; 9],
@@ -47,7 +48,7 @@ pub fn load_image(input: Vec<u8>) -> Image {
 
     let color_matrix = color_space;
 
-    let color_space = color_space.mul(1 << BIT_SHIFT);
+    // let color_space = color_space.mul(1 << BIT_SHIFT);
 
     let wb = [
         decoded_image.white_balance[0] as f32 / decoded_image.white_balance[1] as f32,
@@ -55,16 +56,17 @@ pub fn load_image(input: Vec<u8>) -> Image {
         decoded_image.white_balance[2] as f32 / decoded_image.white_balance[1] as f32,
     ];
 
-    let white_balance = decoded_image
-        .white_balance
-        .mul(1 << (BIT_SHIFT - utility::log2(decoded_image.white_balance[1])));
+    // let white_balance = decoded_image
+    //     .white_balance
+    //     .mul(1 << (BIT_SHIFT - utility::log2(decoded_image.white_balance[1])));
 
     // let gamma_lut = gen_gamma_lut(0.45);
 
     let image = decoded_image.image;
+    let rotation = decoded_image.orientation as isize;
     let width = decoded_image.width;
     let height = decoded_image.height;
-
+    
     let iter = image.iter().copied();
     let data = pass::iters_to_vec! (
         iter
@@ -80,8 +82,10 @@ pub fn load_image(input: Vec<u8>) -> Image {
             ..flatten()
     );
 
+
     Image {
         data,
+        rotation,
         width,
         height,
         wb,
