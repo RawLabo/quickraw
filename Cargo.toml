@@ -25,7 +25,7 @@ rayon = { version = "1.5", optional = true }
 wasm-bindgen = { version = "0.2", optional = true }
 
 [features]
-wasm = ["wasm-bindgen"]
+wasm = ["wasm-bindgen", "image"]
 
 [[bin]]
 name = "quickraw"

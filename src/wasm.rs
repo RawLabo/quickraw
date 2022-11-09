@@ -66,7 +66,7 @@ pub fn load_image(input: Vec<u8>) -> Image {
     let rotation = decoded_image.orientation as isize;
     let width = decoded_image.width;
     let height = decoded_image.height;
-    
+
     let iter = image.iter().copied();
     let data = pass::iters_to_vec! (
         iter
@@ -81,7 +81,6 @@ pub fn load_image(input: Vec<u8>) -> Image {
             // .gamma_correct(&gamma_lut)
             ..flatten()
     );
-
 
     Image {
         data,
@@ -118,4 +117,20 @@ pub fn calc_histogram(pixels: Vec<u8>) -> Vec<u32> {
     }
 
     histogram.to_vec()
+}
+
+#[cfg(feature = "image")]
+#[wasm_bindgen]
+pub fn encode_to_jpeg(pixels: Vec<u8>, width: u32, height: u32) -> Vec<u8> {
+    use image::codecs::jpeg;
+    use image::ColorType;
+    use std::io::Cursor;
+
+    let mut writer = Cursor::new(vec![]);
+    let mut encoder = jpeg::JpegEncoder::new_with_quality(&mut writer, 98);
+    encoder
+        .encode(&pixels, width, height, ColorType::Rgba8)
+        .unwrap();
+
+    writer.into_inner()
 }
