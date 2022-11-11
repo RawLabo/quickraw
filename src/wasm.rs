@@ -1,7 +1,5 @@
 #![allow(dead_code)]
 
-use crate::utility::ArrayMulNum;
-
 use super::*;
 use wasm_bindgen::prelude::*;
 
@@ -38,10 +36,10 @@ impl Image {
 }
 
 #[wasm_bindgen]
-pub fn load_image(input: Vec<u8>) -> Image {
+pub fn load_image(input: Vec<u8>) -> Result<Image, JsError> {
     use pass::*;
 
-    let decoded_image = decode::new_image_from_buffer(input).unwrap();
+    let decoded_image = decode::new_image_from_buffer(input)?;
 
     let color_space = data::XYZ2SRGB;
     let color_space = utility::matrix3_mul(&color_space, &decoded_image.cam_matrix);
@@ -82,14 +80,14 @@ pub fn load_image(input: Vec<u8>) -> Image {
             ..flatten()
     );
 
-    Image {
+    Ok(Image {
         data,
         rotation,
         width,
         height,
         wb,
         color_matrix,
-    }
+    })
 }
 
 #[wasm_bindgen]
@@ -121,16 +119,14 @@ pub fn calc_histogram(pixels: Vec<u8>) -> Vec<u32> {
 
 #[cfg(feature = "image")]
 #[wasm_bindgen]
-pub fn encode_to_jpeg(pixels: Vec<u8>, width: u32, height: u32) -> Vec<u8> {
+pub fn encode_to_jpeg(pixels: Vec<u8>, width: u32, height: u32) -> Result<Vec<u8>, JsError> {
     use image::codecs::jpeg;
     use image::ColorType;
     use std::io::Cursor;
 
     let mut writer = Cursor::new(vec![]);
     let mut encoder = jpeg::JpegEncoder::new_with_quality(&mut writer, 98);
-    encoder
-        .encode(&pixels, width, height, ColorType::Rgba8)
-        .unwrap();
+    encoder.encode(&pixels, width, height, ColorType::Rgba8)?;
 
-    writer.into_inner()
+    Ok(writer.into_inner())
 }
