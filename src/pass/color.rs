@@ -45,6 +45,7 @@ pub fn gamma_correct<'a>(
     })
 }
 
+#[inline(always)]
 pub fn gen_gamma_lut(gamma: f32) -> [u16; 65536] {
     let mut lut = [0u16; 65536];
     for (i, elem) in lut.iter_mut().enumerate() {
