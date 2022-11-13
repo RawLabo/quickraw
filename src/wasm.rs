@@ -122,23 +122,23 @@ pub fn encode_to_jpeg(pixels: Vec<u8>, width: u32, height: u32) -> Result<Vec<u8
 
 #[wasm_bindgen]
 pub struct Thumbnail {
-    thumbnail: Vec<u8>,
+    data: Vec<u8>,
     orientation: isize,
 }
 
 #[wasm_bindgen]
 impl Thumbnail {
     #[wasm_bindgen(getter)]
-    pub fn thumbnail(self) -> Vec<u8> {
-        self.thumbnail
+    pub fn data(self) -> Vec<u8> {
+        self.data
     }
 }
 
 #[wasm_bindgen]
 pub fn load_thumbnail(buffer: Vec<u8>) -> Result<Thumbnail, JsError> {
-    let (thumbnail, orientation) = export::load_thumbnail(&buffer)?;
+    let (data, orientation) = export::load_thumbnail(&buffer)?;
     Ok(Thumbnail {
-        thumbnail,
+        data,
         orientation: orientation as isize,
     })
 }
