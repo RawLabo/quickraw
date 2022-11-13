@@ -27,8 +27,8 @@ pub static XYZ2SRGB: [f32; 9] = [
 
 pub static XYZ2RAW: [f32; 9] = [1.0, 0., 0., 0., 1.0, 0., 0., 0., 1.0];
 
-pub static GAMMA_LINEAR: [f32; 2] = [1.0, 0.0];
-pub static GAMMA_SRGB: [f32; 2] = [0.45, 4.5];
+pub static GAMMA_LINEAR: f32 = 1.0;
+pub static GAMMA_SRGB: f32 = 0.45;
 
 
 pub static CAM_XYZ_MAP: phf::Map<&'static str, [f32; 9]> = phf::phf_map! {

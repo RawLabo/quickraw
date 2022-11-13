@@ -33,7 +33,7 @@ typedef struct QuickrawResponse_Image {
   struct Image content;
 } QuickrawResponse_Image;
 
-struct QuickrawResponse_BasicInfo quickraw_load_basicinfo(char *cpath, bool with_thumbnail);
+struct QuickrawResponse_BasicInfo quickraw_load_basicinfo(char *cpath);
 
 void quickraw_free_basicinfo(struct QuickrawResponse_BasicInfo response);
 

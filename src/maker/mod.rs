@@ -1,4 +1,4 @@
-use crate::raw::{CFAPattern, Crop, Orientation};
+use crate::decode::{CFAPattern, Crop, Orientation};
 use thiserror::Error;
 
 pub(super) mod selector;
@@ -17,6 +17,7 @@ pub(super) trait RawDecoder {
     where
         Self: Sized;
     fn get_info(&self) -> &quickexif::ParsedInfo;
+    fn into_info(self) -> quickexif::ParsedInfo;
     fn get_white_balance(&self) -> Result<[i32; 3], DecodingError> {
         let info = self.get_info();
         Ok([

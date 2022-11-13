@@ -1,6 +1,6 @@
 use super::super::data;
 use super::*;
-use crate::raw::DecodedImage;
+use crate::decode::DecodedImage;
 use crate::RawFileReadingError;
 
 fn prepare(
@@ -107,7 +107,7 @@ pub(in super::super) fn select_and_decode(
                 quickexif::parse_with_prev_info(file_buffer, &$t::IMAGE_RULE, basic_info)?;
             let width = raw_info.usize("width")?;
             let height = raw_info.usize("height")?;
-            let black_level = raw_info.u16("black_level")? as i32;
+            let black_level = raw_info.u16("black_level")?;
 
             let decoder = $t::General::new(raw_info);
             let cfa_pattern = decoder.get_cfa_pattern()?;
@@ -115,7 +115,7 @@ pub(in super::super) fn select_and_decode(
             let orientation = decoder.get_orientation();
             let white_balance = decoder.get_white_balance()?;
             let image = decoder.decode_with_preprocess(file_buffer)?;
-            let scale_factor = decoder.get_bps_scale()? as i32;
+            let scale_factor = decoder.get_bps_scale()?;
 
             DecodedImage {
                 image,
@@ -128,6 +128,7 @@ pub(in super::super) fn select_and_decode(
                 cam_matrix,
                 black_level,
                 scale_factor,
+                parsed_info: decoder.into_info()
             }
         }};
     }

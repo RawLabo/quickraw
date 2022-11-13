@@ -56,6 +56,9 @@ impl RawDecoder for General {
     fn get_info(&self) -> &quickexif::ParsedInfo {
         &self.info
     }
+    fn into_info(self) -> quickexif::ParsedInfo {
+        self.info
+    }
 
     fn get_crop(&self) -> Option<Crop> {
         let x = self.info.u32("crop_left").ok()?;

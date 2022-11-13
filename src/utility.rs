@@ -30,6 +30,7 @@ pub(super) fn log2(x: i32) -> u32 {
     BIT_SHIFT
 }
 
+#[inline(always)]
 pub(super) fn matrix3_mul(a: &[f32; 9], b: &[f32; 9]) -> [f32; 9] {
     [
         a[0] * b[0] + a[1] * b[3] + a[2] * b[6],
@@ -43,16 +44,6 @@ pub(super) fn matrix3_mul(a: &[f32; 9], b: &[f32; 9]) -> [f32; 9] {
         a[6] * b[2] + a[7] * b[5] + a[8] * b[8],
     ]
 }
-
-pub(super) fn gen_gamma_lut(gamma: [f32; 2]) -> [u16; 65536] {
-    let mut gamma_map = [0u16; 65536];
-    for (i, elem) in gamma_map.iter_mut().enumerate() {
-        let l = i as f32 / 65535.;
-        *elem = (l.powf(gamma[0]) * 65535.) as u16;
-    }
-    gamma_map
-}
-
 
 pub(super) static BASIC_INFO_RULE : Lazy<quickexif::ParsingRule> = Lazy::new(|| {
     quickexif::describe_rule!(tiff {

@@ -17,19 +17,13 @@ once_cell = "1"
 phf = { version = "0.10", features = ["macros"] }
 quickexif = "0.1"
 
-# only for cli binary usage
-image = { version = "0.23", optional = true }
-rayon = { version = "1.5", optional = true }
 
 # only for wasm target
 wasm-bindgen = { version = "0.2", optional = true }
+image = { version = "0.24", default-features = false, features = ["jpeg"], optional = true }
 
 [features]
 wasm = ["wasm-bindgen", "image"]
-
-[[bin]]
-name = "quickraw"
-required-features = ["image", "rayon"]
 
 [package.metadata.docs.rs]
 all-features = true

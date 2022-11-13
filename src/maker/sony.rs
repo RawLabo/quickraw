@@ -87,6 +87,9 @@ impl RawDecoder for General {
     fn get_info(&self) -> &quickexif::ParsedInfo {
         &self.info
     }
+    fn into_info(self) -> quickexif::ParsedInfo {
+        self.info
+    }
 
     fn get_bps_scale(&self) -> Result<u16, DecodingError> {
         let result = self.get_white_level_scale()?;

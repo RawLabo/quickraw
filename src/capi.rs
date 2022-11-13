@@ -1,7 +1,6 @@
 use super::*;
 use anyhow::Result;
 use std::ffi::{CStr, CString};
-use std::fs;
 use std::os::raw::*;
 
 fn str_from_cchar<'a>(ptr: *mut c_char) -> &'a str {
@@ -112,26 +111,17 @@ impl Free for BasicInfo {
     }
 }
 
-
-fn load_basicinfo(cpath: *mut c_char, with_thumbnail: bool) -> Result<BasicInfo> {
+fn load_basicinfo(cpath: *mut c_char) -> Result<BasicInfo> {
     let path = str_from_cchar(cpath);
-    let exif = Export::export_exif_info(Input::ByFile(path))?;
+    let buffer = decode::get_buffer_from_file(path)?;
+    let exif = export::load_exif(&buffer)?;
     let s = exif.stringify_all()?;
-    let (thumbnail, orientation) = if with_thumbnail {
-        let buffer = fs::read(path)?;
-        let (data, orientation) = Export::export_thumbnail_data(&buffer)?;
-        (RustVec::new(data.to_vec()), orientation as u8)
-    } else {
-        (RustVec::new_empty(), 0)
-    };
-    Ok(BasicInfo::new(s, thumbnail, orientation))
+    let thumbnail = RustVec::new_empty();
+    Ok(BasicInfo::new(s, thumbnail, 0))
 }
 #[no_mangle]
-pub extern "C" fn quickraw_load_basicinfo(
-    cpath: *mut c_char,
-    with_thumbnail: bool,
-) -> QuickrawResponse<BasicInfo> {
-    QuickrawResponse::new(load_basicinfo(cpath, with_thumbnail))
+pub extern "C" fn quickraw_load_basicinfo(cpath: *mut c_char) -> QuickrawResponse<BasicInfo> {
+    QuickrawResponse::new(load_basicinfo(cpath))
 }
 #[no_mangle]
 pub extern "C" fn quickraw_free_basicinfo(mut response: QuickrawResponse<BasicInfo>) {
@@ -168,22 +158,12 @@ impl Default for Image {
     }
 }
 
-
 fn load_image(cpath: *mut c_char) -> Result<Image> {
     let path = str_from_cchar(cpath);
-    let export = Export::new(
-        Input::ByFile(path),
-        Output::new(
-            DemosaicingMethod::Linear,
-            data::XYZ2SRGB,
-            data::GAMMA_SRGB,
-            OutputType::Raw8,
-            false,
-            false,
-        ),
-    )?;
+    let options = export::Options::new(data::GAMMA_SRGB, &data::XYZ2SRGB, false);
 
-    let (img, width, height) = export.export_8bit_image();
+    let (img, width, height) = export::load_image_from_file(path, options)?;
+    let img = img.into_iter().map(|x| (x / 257) as u8).collect::<Vec<_>>();
     Ok(Image::new(img, width, height))
 }
 #[no_mangle]

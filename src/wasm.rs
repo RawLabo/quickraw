@@ -1,5 +1,8 @@
 #![allow(dead_code)]
 
+use decode::CFAPattern;
+use pass::*;
+
 use super::*;
 use wasm_bindgen::prelude::*;
 
@@ -13,9 +16,9 @@ extern "C" {
 pub struct Image {
     pub width: usize,
     pub height: usize,
-    pub rotation: isize,
+    pub orientation: isize,
     data: Vec<u16>,
-    wb: [f32; 3],
+    white_balance: [f32; 3],
     color_matrix: [f32; 9],
 }
 
@@ -26,8 +29,8 @@ impl Image {
         self.data
     }
     #[wasm_bindgen(getter)]
-    pub fn wb(&self) -> Vec<f32> {
-        self.wb.to_vec()
+    pub fn white_balance(&self) -> Vec<f32> {
+        self.white_balance.to_vec()
     }
     #[wasm_bindgen(getter)]
     pub fn color_matrix(&self) -> Vec<f32> {
@@ -37,55 +40,41 @@ impl Image {
 
 #[wasm_bindgen]
 pub fn load_image(input: Vec<u8>) -> Result<Image, JsError> {
-    use pass::*;
-
-    let decoded_image = decode::new_image_from_buffer(input)?;
-
-    let color_space = data::XYZ2SRGB;
-    let color_space = utility::matrix3_mul(&color_space, &decoded_image.cam_matrix);
-
-    let color_matrix = color_space;
-
-    // let color_space = color_space.mul(1 << BIT_SHIFT);
-
-    let wb = [
-        decoded_image.white_balance[0] as f32 / decoded_image.white_balance[1] as f32,
-        1f32,
-        decoded_image.white_balance[2] as f32 / decoded_image.white_balance[1] as f32,
-    ];
-
-    // let white_balance = decoded_image
-    //     .white_balance
-    //     .mul(1 << (BIT_SHIFT - utility::log2(decoded_image.white_balance[1])));
-
-    // let gamma_lut = gen_gamma_lut(0.45);
+    let decoded_image = decode::decode_buffer(input)?;
 
     let image = decoded_image.image;
-    let rotation = decoded_image.orientation as isize;
+    let orientation = decoded_image.orientation as isize;
     let width = decoded_image.width;
     let height = decoded_image.height;
 
     let iter = image.iter().copied();
-    let data = pass::iters_to_vec! (
+    let data = pass::iters_to_vec!(
         iter
             ..enumerate()
             .pixel_info(width, height)
-            .demosaic(&image, width)
-            // .u16rgb_to_i32rgb()
-            // .sub_black_level(decoded_image.black_level)
-            // .level_scale_up(decoded_image.scale_factor)
-            // .white_balance_fix(&white_balance)
-            // .color_convert(&color_space)
-            // .gamma_correct(&gamma_lut)
+            [decoded_image.cfa_pattern] {
+                CFAPattern::RGGB => .linear_rggb(&image, width),
+                CFAPattern::GRBG => .linear_grbg(&image, width),
+                CFAPattern::GBRG => .linear_gbrg(&image, width),
+                CFAPattern::BGGR => .linear_bggr(&image, width),
+                CFAPattern::XTrans0 => .linear_xtrans0(&image, width),
+                CFAPattern::XTrans1 => .linear_xtrans1(&image, width)
+            }
             ..flatten()
     );
 
+    let color_matrix = utility::matrix3_mul(&data::XYZ2SRGB, &decoded_image.cam_matrix);
+    let white_balance = {
+        let [r, g, b] = decoded_image.white_balance;
+        [r as f32 / g as f32, 1f32, b as f32 / g as f32]
+    };
+
     Ok(Image {
         data,
-        rotation,
+        orientation,
         width,
         height,
-        wb,
+        white_balance,
         color_matrix,
     })
 }
@@ -129,4 +118,27 @@ pub fn encode_to_jpeg(pixels: Vec<u8>, width: u32, height: u32) -> Result<Vec<u8
     encoder.encode(&pixels, width, height, ColorType::Rgba8)?;
 
     Ok(writer.into_inner())
+}
+
+#[wasm_bindgen]
+pub struct Thumbnail {
+    thumbnail: Vec<u8>,
+    orientation: isize,
+}
+
+#[wasm_bindgen]
+impl Thumbnail {
+    #[wasm_bindgen(getter)]
+    pub fn thumbnail(self) -> Vec<u8> {
+        self.thumbnail
+    }
+}
+
+#[wasm_bindgen]
+pub fn load_thumbnail(buffer: Vec<u8>) -> Result<Thumbnail, JsError> {
+    let (thumbnail, orientation) = export::load_thumbnail(&buffer)?;
+    Ok(Thumbnail {
+        thumbnail,
+        orientation: orientation as isize,
+    })
 }

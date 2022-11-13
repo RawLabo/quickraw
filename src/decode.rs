@@ -1,8 +1,45 @@
 use std::{fs::File, io::Read};
-
-use raw::{Orientation, DecodedImage};
-
 use super::*;
+
+#[allow(clippy::upper_case_acronyms)]
+#[derive(Debug)]
+pub enum CFAPattern {
+    RGGB,
+    GRBG,
+    GBRG,
+    BGGR,
+    XTrans0, // RBGBRG
+    XTrans1, // GGRGGB
+}
+
+pub struct Crop {
+    pub x: u32,
+    pub y: u32,
+    pub width: u32,
+    pub height: u32,
+}
+
+pub struct DecodedImage {
+    pub cfa_pattern: CFAPattern,
+    pub width: usize,
+    pub height: usize,
+    pub crop: Option<Crop>,
+    pub orientation: Orientation,
+    pub image: Vec<u16>,
+    pub white_balance: [i32; 3],
+    pub cam_matrix: [f32; 9],
+    pub scale_factor: u16,
+    pub black_level: u16,
+    pub parsed_info: quickexif::ParsedInfo
+}
+
+pub enum Orientation {
+    Horizontal = 0,
+    Rotate90 = 90,
+    Rotate180 = 180,
+    Rotate270 = 270,
+}
+
 
 pub(super) fn get_buffer_from_file(path: &str) -> Result<Vec<u8>, RawFileReadingError> {
     let mut f =
@@ -30,13 +67,14 @@ fn prepare_buffer(mut buffer: Vec<u8>) -> Vec<u8> {
 
 /// Gets `RawImage` from a file
 #[cfg_attr(not(feature = "wasm-bindgen"), fn_util::bench(decoding))]
-pub fn new_image_from_file(path: &str) -> Result<DecodedImage, RawFileReadingError> {
+pub fn decode_file(path: &str) -> Result<DecodedImage, RawFileReadingError> {
     let buffer = get_buffer_from_file(path)?;
-    new_image_from_buffer(buffer)
+    decode_buffer(buffer)
 }
 
 /// Gets `RawImage` from a buffer
-pub fn new_image_from_buffer(buffer: Vec<u8>) -> Result<DecodedImage, RawFileReadingError> {
+#[inline(always)]
+pub fn decode_buffer(buffer: Vec<u8>) -> Result<DecodedImage, RawFileReadingError> {
     let buffer = prepare_buffer(buffer);
 
     let rule = &utility::BASIC_INFO_RULE;

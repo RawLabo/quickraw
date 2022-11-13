@@ -158,6 +158,9 @@ impl RawDecoder for General {
     fn get_info(&self) -> &quickexif::ParsedInfo {
         &self.info
     }
+    fn into_info(self) -> quickexif::ParsedInfo {
+        self.info
+    }
     fn get_white_balance(&self) -> Result<[i32; 3], DecodingError> {
         let r = 512.0 / self.info.f64("white_balance_r")?;
         let g = 512.0 / self.info.f64("white_balance_g")?;

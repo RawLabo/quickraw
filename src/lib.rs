@@ -61,31 +61,21 @@ use thiserror::Error;
 
 pub mod data;
 
-mod color;
 mod utility;
 
 mod pass;
 mod maker;
-mod raw;
 mod capi;
 mod decode;
-pub use decode::new_image_from_file;
-pub use decode::new_image_from_buffer;
+pub use decode::decode_file;
+pub use decode::decode_buffer;
 
 #[cfg(feature = "wasm-bindgen")]
 mod wasm;
 
 pub mod export;
-pub use export::Export;
 
 const BIT_SHIFT: u32 = 13u32;
-
-#[derive(Debug)]
-pub struct ColorConversion {
-    white_balance: [i32; 3],
-    gamma_lut: [u16; 65536],
-    color_space: [i32; 9],
-}
 
 /// All the demosaicing method currently supported.
 #[derive(Clone)]

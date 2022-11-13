@@ -1,225 +1,82 @@
-//! Contains all the functions needed to export image.
-//!
+use crate::{
+    decode::{CFAPattern, Orientation},
+    utility::ArrayMulNum,
+};
+
 use super::*;
-use crate::raw::{Orientation, DecodedImage};
+use pass::*;
 
-/// Errors cover issues during raw reading and image exporting.
-#[derive(Error, Debug)]
-pub enum Error {
-    #[error("Cannot export the image.")]
-    RawFileReadingError(#[from] RawFileReadingError),
-    #[error("Cannot create the export object for the file: '{0}'")]
-    InvalidFileForNewExport(String),
-    #[error("Cannot export image to the file: '{0}'")]
-    ErrorWhenExportingFile(String),
-    #[error("The {0} image data(len:{1}, width:{2}, height:{3}) is invalid for ImageBuffer.")]
-    ImageBufferError(String, usize, usize, usize),
-    #[error("Cannot understand the thumbnail image data(len: {0}) for the file: '{1}'")]
-    CannotReadThumbnail(usize, String),
+pub struct Options<'a> {
+    gamma: f32,
+    color_space: &'a [f32; 9],
+    no_demosaicing: bool,
 }
-
-/// Exports the rendered result.
-pub struct Export {
-    color_conversion: ColorConversion,
-    decoded_image: DecodedImage,
-    output: Output,
-}
-
-impl Export {
-    fn cast_identity(x: u16) -> u16 {
-        x
-    }
-    fn cast_u16_u8(x: u16) -> u8 {
-        (x / 256) as u8
-    }
-    pub fn new(input: Input, output: Output) -> Result<Self, RawFileReadingError> {
-        let decoded_image = match input {
-            Input::ByFile(file) => decode::new_image_from_file(file),
-            Input::ByBuffer(buffer) => decode::new_image_from_buffer(buffer),
-        }?;
-
-        let color_conversion = ColorConversion::new(&decoded_image, output.color_space, output.gamma);
-
-        Ok(Export {
-            color_conversion,
-            decoded_image,
-            output,
-        })
-    }
-
-    /// Exports u8 array reference of thumbnail data and the orientation.
-    pub fn export_thumbnail_data(buffer: &[u8]) -> Result<(&[u8], Orientation), Error> {
-        let (thumbnail, orientation) = decode::get_thumbnail(buffer)?;
-        Ok((thumbnail, orientation))
-    }
-
-    /// Exports 16bit image RGB data with width and height.
-    pub fn export_16bit_image(&self) -> (Vec<u16>, usize, usize) {
-        self.export_image_data(Self::cast_identity)
-    }
-    /// Exports 8bit image RGB data with width and height.
-    pub fn export_8bit_image(&self) -> (Vec<u8>, usize, usize) {
-        self.export_image_data(Self::cast_u16_u8)
-    }
-
-    #[cfg_attr(
-        not(feature = "wasm-bindgen"),
-        fn_util::bench(demosaicing_with_postprocess)
-    )]
-    fn export_image_data<T>(&self, cast_fn: fn(u16) -> T) -> (Vec<T>, usize, usize) {
-        match self.output.demosaicing_method {
-            DemosaicingMethod::None => self
-                .decoded_image
-                .no_demosaic_render(&self.color_conversion, cast_fn),
-            DemosaicingMethod::SuperPixel => self
-                .decoded_image
-                .super_pixel_render(&self.color_conversion, cast_fn),
-            DemosaicingMethod::Linear => self
-                .decoded_image
-                .linear_render(&self.color_conversion, cast_fn),
+impl<'a> Options<'a> {
+    pub fn new(gamma: f32, color_space: &'a [f32; 9], no_demosaicing: bool) -> Self {
+        Options {
+            gamma,
+            color_space,
+            no_demosaicing,
         }
-    }
-
-    /// Exports the parsed EXIF data from input
-    pub fn export_exif_info(input: Input) -> Result<quickexif::ParsedInfo, RawFileReadingError> {
-        let buffer = match input {
-            Input::ByFile(file) => decode::get_buffer_from_file(file)?,
-            Input::ByBuffer(buffer) => buffer,
-        };
-
-        decode::get_exif_info(&buffer)
-    }
-
-    /// Print all the parsed EXIF data from input
-    pub fn print_exif_info(input: Input) -> Result<String, RawFileReadingError> {
-        Export::export_exif_info(input)?
-            .stringify_all()
-            .map_err(|err| quickexif::parsed_info::Error::from(err).into())
     }
 }
 
-/// Enables image rotation and different image types output available.
-#[cfg(feature = "image")]
-pub mod image_export {
-    use super::*;
-    use std::io::Write;
-    use std::{fs::File, io::BufWriter};
+pub fn load_image_from_file(
+    path: &str,
+    options: Options,
+) -> Result<(Vec<u16>, usize, usize), RawFileReadingError> {
+    let buffer = decode::get_buffer_from_file(path)?;
+    load_image_from_buffer(buffer, options)
+}
 
-    use image::{
-        codecs::jpeg, imageops, ColorType, EncodableLayout, ImageBuffer, ImageEncoder, ImageFormat,
-        ImageResult, Rgb,
-    };
+pub fn load_image_from_buffer(
+    buffer: Vec<u8>,
+    options: Options,
+) -> Result<(Vec<u16>, usize, usize), RawFileReadingError> {
+    let decoded_image = decode::decode_buffer(buffer)?;
 
-    trait SaveWithQuality {
-        fn save_with_quality(&self, path: &str, quality: u8) -> ImageResult<()>;
-    }
+    let color_matrix = utility::matrix3_mul(options.color_space, &decoded_image.cam_matrix);
+    let color_matrix = color_matrix.mul(1 << BIT_SHIFT);
 
-    impl<T: 'static + image::Primitive> SaveWithQuality for ImageBuffer<Rgb<T>, Vec<T>>
-    where
-        [T]: image::EncodableLayout,
-    {
-        fn save_with_quality(&self, path: &str, quality: u8) -> ImageResult<()> {
-            let format = ImageFormat::from_path(path)?;
-            match format {
-                ImageFormat::Jpeg => {
-                    let fout = &mut BufWriter::new(File::create(path)?);
-                    jpeg::JpegEncoder::new_with_quality(fout, quality).write_image(
-                        self.as_bytes(),
-                        self.width(),
-                        self.height(),
-                        ColorType::Rgb8,
-                    )
-                }
-                _ => self.save(path),
+    let white_balance = decoded_image
+        .white_balance
+        .mul(1 << (BIT_SHIFT - utility::log2(decoded_image.white_balance[1])));
+
+    let gamma_lut = gen_gamma_lut(options.gamma);
+
+    let image = decoded_image.image;
+    let width = decoded_image.width;
+    let height = decoded_image.height;
+
+    let iter = image.iter().copied();
+    let data = pass::iters_to_vec! (
+        iter
+            ..enumerate()
+            .pixel_info(width, height)
+            [(options.no_demosaicing, decoded_image.cfa_pattern)] {
+                (true, _) => .none(),
+                (false, CFAPattern::RGGB) => .linear_rggb(&image, width),
+                (false, CFAPattern::GRBG) => .linear_grbg(&image, width),
+                (false, CFAPattern::GBRG) => .linear_gbrg(&image, width),
+                (false, CFAPattern::BGGR) => .linear_bggr(&image, width),
+                (false, CFAPattern::XTrans0) => .linear_xtrans0(&image, width),
+                (false, CFAPattern::XTrans1) => .linear_xtrans1(&image, width)
             }
-        }
-    }
+            .gamma_correct(&gamma_lut)
+            .u16rgb_to_i32rgb()
+            .white_balance_fix(&white_balance)
+            .color_convert(&color_matrix)
+            ..flatten()
+    );
 
-    impl Export {
-        #[cfg_attr(not(feature = "wasm-bindgen"), fn_util::bench(writing_file))]
-        fn write_to_file<T: 'static + image::Primitive>(
-            &self,
-            path: &String,
-            (data, width, height): (Vec<T>, usize, usize),
-            quality: u8,
-        ) -> Result<(), Error>
-        where
-            [T]: image::EncodableLayout,
-        {
-            let len = data.len();
-            let mut image =
-                ImageBuffer::<Rgb<T>, Vec<T>>::from_raw(width as u32, height as u32, data)
-                    .ok_or_else(|| {
-                        Error::ImageBufferError(stringify!(T).to_owned(), len, width, height)
-                    })?;
+    Ok((data, width, height))
+}
 
-            let image = match (&self.decoded_image.crop, self.output.auto_crop) {
-                (Some(c), true) => {
-                    imageops::crop(&mut image, c.x, c.y, c.width, c.height).to_image()
-                }
-                _ => image,
-            };
-            let image = match (&self.decoded_image.orientation, self.output.auto_rotate) {
-                (Orientation::Horizontal, _) | (_, false) => image,
-                (Orientation::Rotate90, true) => imageops::rotate90(&image),
-                (Orientation::Rotate180, true) => imageops::rotate180(&image),
-                (Orientation::Rotate270, true) => imageops::rotate270(&image),
-            };
+pub fn load_exif(buffer: &[u8]) -> Result<quickexif::ParsedInfo, RawFileReadingError> {
+    decode::get_exif_info(buffer)
+}
 
-            image
-                .save_with_quality(path, quality)
-                .map_err(|_| Error::ErrorWhenExportingFile(path.to_owned()))?;
-
-            Ok(())
-        }
-
-        /// Exports the thumbnail image from raw to the path
-        pub fn export_thumbnail_to_file(input_path: &str, output_path: &str) -> Result<(), Error> {
-            let buffer = decode::get_buffer_from_file(input_path)?;
-            let (thumbnail, orientation) = decode::get_thumbnail(buffer.as_slice())?;
-
-            match orientation {
-                Orientation::Horizontal => {
-                    let mut f = File::create(output_path)
-                        .map_err(|_| Error::ErrorWhenExportingFile(output_path.to_owned()))?;
-                    f.write_all(thumbnail)
-                        .map_err(|_| Error::ErrorWhenExportingFile(output_path.to_owned()))?;
-                }
-                _ => {
-                    let img = image::load_from_memory(thumbnail).map_err(|_| {
-                        Error::CannotReadThumbnail(thumbnail.len(), input_path.to_owned())
-                    })?;
-
-                    let img = match orientation {
-                        Orientation::Rotate90 => imageops::rotate90(&img),
-                        Orientation::Rotate180 => imageops::rotate180(&img),
-                        Orientation::Rotate270 => imageops::rotate270(&img),
-                        _ => img.to_rgba8(),
-                    };
-
-                    img.save(output_path)
-                        .map_err(|_| Error::ErrorWhenExportingFile(output_path.to_owned()))?;
-                }
-            }
-
-            Ok(())
-        }
-
-        /// Exports the rendered image to a Image file with specificed quality.
-        pub fn export_image(&self, quality: u8) -> Result<(), Error> {
-            match &self.output.output_type {
-                OutputType::Image8(path) => {
-                    let data = self.export_image_data(Export::cast_u16_u8);
-                    self.write_to_file(path, data, quality)?;
-                }
-                OutputType::Image16(path) => {
-                    let data = self.export_image_data(Export::cast_identity);
-                    self.write_to_file(path, data, quality)?;
-                }
-                _ => {}
-            }
-
-            Ok(())
-        }
-    }
+pub fn load_thumbnail(buffer: &[u8]) -> Result<(Vec<u8>, Orientation), RawFileReadingError> {
+    let (thumbnail, orientation) = decode::get_thumbnail(buffer)?;
+    Ok((thumbnail.to_vec(), orientation))
 }
