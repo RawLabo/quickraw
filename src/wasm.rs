@@ -48,14 +48,13 @@ pub fn load_image(input: Vec<u8>) -> Result<Image, JsError> {
     let data = pass::iters_to_vec!(
         iter
             ..enumerate()
-            .pixel_info(width, height)
             [decoded_image.cfa_pattern] {
-                CFAPattern::RGGB => .linear_rggb(&image, width),
-                CFAPattern::GRBG => .linear_grbg(&image, width),
-                CFAPattern::GBRG => .linear_gbrg(&image, width),
-                CFAPattern::BGGR => .linear_bggr(&image, width),
-                CFAPattern::XTrans0 => .linear_xtrans0(&image, width),
-                CFAPattern::XTrans1 => .linear_xtrans1(&image, width)
+                CFAPattern::RGGB => .linear_rggb(&image, width, height),
+                CFAPattern::GRBG => .linear_grbg(&image, width, height),
+                CFAPattern::GBRG => .linear_gbrg(&image, width, height),
+                CFAPattern::BGGR => .linear_bggr(&image, width, height),
+                CFAPattern::XTrans0 => .linear_xtrans0(&image, width, height),
+                CFAPattern::XTrans1 => .linear_xtrans1(&image, width, height)
             }
             ..flatten()
     );

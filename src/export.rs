@@ -52,15 +52,14 @@ pub fn load_image_from_buffer(
     let data = pass::iters_to_vec! (
         iter
             ..enumerate()
-            .pixel_info(width, height)
             [(options.no_demosaicing, decoded_image.cfa_pattern)] {
                 (true, _) => .none(),
-                (false, CFAPattern::RGGB) => .linear_rggb(&image, width),
-                (false, CFAPattern::GRBG) => .linear_grbg(&image, width),
-                (false, CFAPattern::GBRG) => .linear_gbrg(&image, width),
-                (false, CFAPattern::BGGR) => .linear_bggr(&image, width),
-                (false, CFAPattern::XTrans0) => .linear_xtrans0(&image, width),
-                (false, CFAPattern::XTrans1) => .linear_xtrans1(&image, width)
+                (false, CFAPattern::RGGB) => .linear_rggb(&image, width, height),
+                (false, CFAPattern::GRBG) => .linear_grbg(&image, width, height),
+                (false, CFAPattern::GBRG) => .linear_gbrg(&image, width, height),
+                (false, CFAPattern::BGGR) => .linear_bggr(&image, width, height),
+                (false, CFAPattern::XTrans0) => .linear_xtrans0(&image, width, height),
+                (false, CFAPattern::XTrans1) => .linear_xtrans1(&image, width, height)
             }
             .gamma_correct(&gamma_lut)
             .u16rgb_to_i32rgb()

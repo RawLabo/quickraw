@@ -1,30 +1,28 @@
 use super::*;
 
 #[inline(always)]
-pub(super) fn rggb(
-    PixelInfo {
-        i,
-        v,
-        x: _,
-        y: _,
-        is_top,
-        is_left,
-        is_bottom,
-        is_right,
-        is_column_even,
-        is_row_even,
-    }: PixelInfo,
-    image: &[u16],
-    w: usize,
-) -> [u16; 3] {
-    match (
+fn bayer_pixel_info(i: usize, w: usize, h: usize) -> (bool, bool, bool, bool, bool, bool) {
+    let x = i % w;
+    let y = i / w;
+    let is_top = y == 0;
+    let is_left = x == 0;
+    let is_bottom = y == h - 1;
+    let is_right = x == w - 1;
+    let is_column_even = x % 2 == 0;
+    let is_row_even = y % 2 == 0;
+    (
         is_top,
         is_bottom,
         is_left,
         is_right,
         is_column_even,
         is_row_even,
-    ) {
+    )
+}
+
+#[inline(always)]
+pub(super) fn rggb(i: usize, v: u16, image: &[u16], w: usize, h: usize) -> [u16; 3] {
+    match bayer_pixel_info(i, w, h) {
         // top left corner
         (true, _, true, _, _, _) => [v, avg(image, [i + 1, i + w]), get_pixel(image, i + w + 1)],
         // top right corner
@@ -77,30 +75,8 @@ pub(super) fn rggb(
 }
 
 #[inline(always)]
-pub(super) fn bggr(
-    PixelInfo {
-        i,
-        v,
-        x: _,
-        y: _,
-        is_top,
-        is_left,
-        is_bottom,
-        is_right,
-        is_column_even,
-        is_row_even,
-    }: PixelInfo,
-    image: &[u16],
-    w: usize,
-) -> [u16; 3] {
-    match (
-        is_top,
-        is_bottom,
-        is_left,
-        is_right,
-        is_column_even,
-        is_row_even,
-    ) {
+pub(super) fn bggr(i: usize, v: u16, image: &[u16], w: usize, h: usize) -> [u16; 3] {
+    match bayer_pixel_info(i, w, h) {
         // top left corner
         (true, _, true, _, _, _) => [get_pixel(image, i + w + 1), avg(image, [i + 1, i + w]), v],
         // top right corner
@@ -153,30 +129,8 @@ pub(super) fn bggr(
 }
 
 #[inline(always)]
-pub(super) fn grbg(
-    PixelInfo {
-        i,
-        v,
-        x: _,
-        y: _,
-        is_top,
-        is_left,
-        is_bottom,
-        is_right,
-        is_column_even,
-        is_row_even,
-    }: PixelInfo,
-    image: &[u16],
-    w: usize,
-) -> [u16; 3] {
-    match (
-        is_top,
-        is_bottom,
-        is_left,
-        is_right,
-        is_column_even,
-        is_row_even,
-    ) {
+pub(super) fn grbg(i: usize, v: u16, image: &[u16], w: usize, h: usize) -> [u16; 3] {
+    match bayer_pixel_info(i, w, h) {
         // top left corner
         (true, _, true, _, _, _) => [get_pixel(image, i + 1), v, get_pixel(image, i + w)],
         // top right corner
@@ -233,30 +187,8 @@ pub(super) fn grbg(
 }
 
 #[inline(always)]
-pub(super) fn gbrg(
-    PixelInfo {
-        i,
-        v,
-        x: _,
-        y: _,
-        is_top,
-        is_left,
-        is_bottom,
-        is_right,
-        is_column_even,
-        is_row_even,
-    }: PixelInfo,
-    image: &[u16],
-    w: usize,
-) -> [u16; 3] {
-    match (
-        is_top,
-        is_bottom,
-        is_left,
-        is_right,
-        is_column_even,
-        is_row_even,
-    ) {
+pub(super) fn gbrg(i: usize, v: u16, image: &[u16], w: usize, h: usize) -> [u16; 3] {
+    match bayer_pixel_info(i, w, h) {
         // top left corner
         (true, _, true, _, _, _) => [get_pixel(image, i + w), v, get_pixel(image, i + 1)],
         // top right corner
@@ -313,22 +245,14 @@ pub(super) fn gbrg(
 }
 
 #[inline(always)]
-pub(super) fn xtrans0(
-    PixelInfo {
-        i,
-        v,
-        x,
-        y,
-        is_top,
-        is_left,
-        is_bottom,
-        is_right,
-        is_column_even: _,
-        is_row_even: _,
-    }: PixelInfo,
-    image: &[u16],
-    w: usize,
-) -> [u16; 3] {
+pub(super) fn xtrans0(i: usize, v: u16, image: &[u16], w: usize, h: usize) -> [u16; 3] {
+    let x = i % w;
+    let y = i / w;
+    let is_top = y == 0;
+    let is_left = x == 0;
+    let is_bottom = y == h - 1;
+    let is_right = x == w - 1;
+
     let index = (x % 6, y % 6);
     macro_rules! avg {
         (137) => {
@@ -479,22 +403,14 @@ pub(super) fn xtrans0(
 }
 
 #[inline(always)]
-pub(super) fn xtrans1(
-    PixelInfo {
-        i,
-        v,
-        x,
-        y,
-        is_top,
-        is_left,
-        is_bottom,
-        is_right,
-        is_column_even: _,
-        is_row_even: _,
-    }: PixelInfo,
-    image: &[u16],
-    w: usize,
-) -> [u16; 3] {
+pub(super) fn xtrans1(i: usize, v: u16, image: &[u16], w: usize, h: usize) -> [u16; 3] {
+    let x = i % w;
+    let y = i / w;
+    let is_top = y == 0;
+    let is_left = x == 0;
+    let is_bottom = y == h - 1;
+    let is_right = x == w - 1;
+
     let index = (x % 6, y % 6);
     macro_rules! avg {
         (137) => {
@@ -640,6 +556,6 @@ pub(super) fn xtrans1(
         (_, _, _, true, (_, 4)) => [p!(i - w), p!(i - 1), v],
         (_, _, _, true, (_, 5)) => [p!(i - 1), v, p!(i - w)],
 
-        _ => [0;3],
+        _ => [0; 3],
     }
 }
