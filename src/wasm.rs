@@ -17,17 +17,14 @@ pub struct Image {
     pub width: usize,
     pub height: usize,
     pub orientation: isize,
-    data: Vec<u16>,
+    pub data_ptr: *const u16,
+    pub data_len: usize,
     white_balance: [f32; 3],
     color_matrix: [f32; 9],
 }
 
 #[wasm_bindgen]
 impl Image {
-    #[wasm_bindgen(getter)]
-    pub fn data(self) -> Vec<u16> {
-        self.data
-    }
     #[wasm_bindgen(getter)]
     pub fn white_balance(&self) -> Vec<f32> {
         self.white_balance.to_vec()
@@ -69,8 +66,14 @@ pub fn load_image(input: Vec<u8>) -> Result<Image, JsError> {
         [r as f32 / g as f32, 1f32, b as f32 / g as f32]
     };
 
+    let data_ptr = data.as_ptr();
+    let data_len = data.len();
+
+    std::mem::forget(data);
+
     Ok(Image {
-        data,
+        data_ptr,
+        data_len,
         orientation,
         width,
         height,
@@ -108,10 +111,13 @@ pub fn calc_histogram(pixels: Vec<u8>) -> Vec<u32> {
 
 #[cfg(feature = "image")]
 #[wasm_bindgen]
-pub fn encode_to_jpeg(pixels: Vec<u8>, width: u32, height: u32) -> Result<Vec<u8>, JsError> {
+pub fn encode_to_jpeg(pixels_ptr: *mut u8, width: u32, height: u32) -> Result<Vec<u8>, JsError> {
     use image::codecs::jpeg;
     use image::ColorType;
     use std::io::Cursor;
+
+    let len = (width * height * 4) as usize;
+    let pixels = unsafe { Vec::from_raw_parts(pixels_ptr, len, len) };
 
     let mut writer = Cursor::new(vec![]);
     let mut encoder = jpeg::JpegEncoder::new_with_quality(&mut writer, 98);
