@@ -35,51 +35,57 @@ impl Image {
     }
 }
 
-#[wasm_bindgen]
-pub fn load_image(input: Vec<u8>) -> Result<Image, JsError> {
-    let decoded_image = decode::decode_buffer(input)?;
+macro_rules! gen_image_loader {
+    ($name:ident, $rggb:ident, $grbg:ident, $gbrg:ident, $bggr:ident) => {
+        #[wasm_bindgen]
+        pub fn $name(input: Vec<u8>) -> Result<Image, JsError> {
+            let decoded_image = decode::decode_buffer(input)?;
 
-    let image = decoded_image.image;
-    let orientation = decoded_image.orientation as isize;
-    let width = decoded_image.width;
-    let height = decoded_image.height;
+            let image = decoded_image.image;
+            let orientation = decoded_image.orientation as isize;
+            let width = decoded_image.width;
+            let height = decoded_image.height;
 
-    let iter = image.iter().copied();
-    let data = pass::iters_to_vec!(
-        iter
-            ..enumerate()
-            [decoded_image.cfa_pattern] {
-                CFAPattern::RGGB => .linear_rggb(&image, width, height),
-                CFAPattern::GRBG => .linear_grbg(&image, width, height),
-                CFAPattern::GBRG => .linear_gbrg(&image, width, height),
-                CFAPattern::BGGR => .linear_bggr(&image, width, height),
-                CFAPattern::XTrans0 => .linear_xtrans0(&image, width, height),
-                CFAPattern::XTrans1 => .linear_xtrans1(&image, width, height)
-            }
-            ..flatten()
-    );
+            let iter = image.iter().copied();
+            let data = pass::iters_to_vec!(
+                iter
+                    ..enumerate()
+                    [decoded_image.cfa_pattern] {
+                        CFAPattern::RGGB => .$rggb(&image, width, height),
+                        CFAPattern::GRBG => .$grbg(&image, width, height),
+                        CFAPattern::GBRG => .$gbrg(&image, width, height),
+                        CFAPattern::BGGR => .$bggr(&image, width, height),
+                        CFAPattern::XTrans0 => .linear_xtrans0(&image, width, height),
+                        CFAPattern::XTrans1 => .linear_xtrans1(&image, width, height)
+                    }
+                    ..flatten()
+            );
 
-    let color_matrix = utility::matrix3_mul(&data::XYZ2SRGB, &decoded_image.cam_matrix);
-    let white_balance = {
-        let [r, g, b] = decoded_image.white_balance;
-        [r as f32 / g as f32, 1f32, b as f32 / g as f32]
+            let color_matrix = utility::matrix3_mul(&data::XYZ2SRGB, &decoded_image.cam_matrix);
+            let white_balance = {
+                let [r, g, b] = decoded_image.white_balance;
+                [r as f32 / g as f32, 1f32, b as f32 / g as f32]
+            };
+
+            let data_ptr = data.as_ptr();
+            let data_len = data.len();
+
+            std::mem::forget(data);
+
+            Ok(Image {
+                data_ptr,
+                data_len,
+                orientation,
+                width,
+                height,
+                white_balance,
+                color_matrix,
+            })
+        }
     };
-
-    let data_ptr = data.as_ptr();
-    let data_len = data.len();
-
-    std::mem::forget(data);
-
-    Ok(Image {
-        data_ptr,
-        data_len,
-        orientation,
-        width,
-        height,
-        white_balance,
-        color_matrix,
-    })
 }
+gen_image_loader!(load_image, linear_rggb, linear_grbg, linear_gbrg, linear_bggr);
+gen_image_loader!(load_image_enhanced, elinear_rggb, elinear_grbg, elinear_gbrg, elinear_bggr);
 
 #[wasm_bindgen]
 pub fn calc_histogram(pixels: Vec<u8>) -> Vec<u32> {
