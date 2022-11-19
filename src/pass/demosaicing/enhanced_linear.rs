@@ -95,13 +95,9 @@ pub(super) fn rggb(i: usize, v: u16, image: &[u16], w: usize, h: usize) -> [u16;
             v,
         ],
         // red
-        (_, _, _, _, true, true) => {
-            calc_pixel_at_rb(image, i, w)
-        }
+        (_, _, _, _, true, true) => calc_pixel_at_rb(image, i, w),
         // green1
-        (_, _, _, _, false, true) => {
-            calc_pixel_at_g(image, i, w)
-        }
+        (_, _, _, _, false, true) => calc_pixel_at_g(image, i, w),
         // green2
         (_, _, _, _, true, false) => {
             let [horiz, g, vert] = calc_pixel_at_g(image, i, w);
@@ -151,21 +147,19 @@ pub(super) fn bggr(i: usize, v: u16, image: &[u16], w: usize, h: usize) -> [u16;
             avg(image, [i - w - 1, i + w - 1]),
         ],
         // blue
-        (_, _, _, _, true, true) => [
-            avg(image, [i - w - 1, i - w + 1, i + w - 1, i + w + 1]),
-            avg(image, [i - w, i + w, i - 1, i + 1]),
-            v,
-        ],
+        (_, _, _, _, true, true) => {
+            let [b, g, r] = calc_pixel_at_rb(image, i, w);
+            [r, g, b]
+        }
         // green2
-        (_, _, _, _, false, true) => [avg(image, [i - w, i + w]), v, avg(image, [i - 1, i + 1])],
+        (_, _, _, _, false, true) => {
+            let [horiz, g, vert] = calc_pixel_at_g(image, i, w);
+            [vert, g, horiz]
+        }
         // green1
-        (_, _, _, _, true, false) => [avg(image, [i - 1, i + 1]), v, avg(image, [i - w, i + w])],
+        (_, _, _, _, true, false) => calc_pixel_at_g(image, i, w),
         // red
-        (_, _, _, _, false, false) => [
-            v,
-            avg(image, [i - w, i + w, i - 1, i + 1]),
-            avg(image, [i - w - 1, i - w + 1, i + w - 1, i + w + 1]),
-        ],
+        (_, _, _, _, false, false) => calc_pixel_at_rb(image, i, w),
     }
 }
 
@@ -209,21 +203,19 @@ pub(super) fn grbg(i: usize, v: u16, image: &[u16], w: usize, h: usize) -> [u16;
         ],
         (_, _, _, true, _, false) => [avg(image, [i - w, i + w]), v, get_pixel(image, i - 1)],
         // green1
-        (_, _, _, _, true, true) => [avg(image, [i - 1, i + 1]), v, avg(image, [i - w, i + w])],
+        (_, _, _, _, true, true) => calc_pixel_at_g(image, i, w),
         // red
-        (_, _, _, _, false, true) => [
-            v,
-            avg(image, [i - w, i + w, i - 1, i + 1]),
-            avg(image, [i - w - 1, i - w + 1, i + w - 1, i + w + 1]),
-        ],
+        (_, _, _, _, false, true) => calc_pixel_at_rb(image, i, w),
         // blue
-        (_, _, _, _, true, false) => [
-            avg(image, [i - w - 1, i - w + 1, i + w - 1, i + w + 1]),
-            avg(image, [i - w, i + w, i - 1, i + 1]),
-            v,
-        ],
+        (_, _, _, _, true, false) => {
+            let [b, g, r] = calc_pixel_at_rb(image, i, w);
+            [r, g, b]
+        }
         // green2
-        (_, _, _, _, false, false) => [avg(image, [i - w, i + w]), v, avg(image, [i - 1, i + 1])],
+        (_, _, _, _, false, false) => {
+            let [horiz, g, vert] = calc_pixel_at_g(image, i, w);
+            [vert, g, horiz]
+        }
     }
 }
 
@@ -267,21 +259,18 @@ pub(super) fn gbrg(i: usize, v: u16, image: &[u16], w: usize, h: usize) -> [u16;
         ],
         (_, _, _, true, _, false) => [get_pixel(image, i - 1), v, avg(image, [i - w, i + w])],
         // green2
-        (_, _, _, _, true, true) => [avg(image, [i - w, i + w]), v, avg(image, [i - 1, i + 1])],
+        (_, _, _, _, true, true) => {
+            let [horiz, g, vert] = calc_pixel_at_g(image, i, w);
+            [vert, g, horiz]
+        }
         // blue
-        (_, _, _, _, false, true) => [
-            avg(image, [i - w - 1, i - w + 1, i + w - 1, i + w + 1]),
-            avg(image, [i - w, i + w, i - 1, i + 1]),
-            v,
-        ],
+        (_, _, _, _, false, true) => {
+            let [b, g, r] = calc_pixel_at_rb(image, i, w);
+            [r, g, b]
+        }
         // red
-        (_, _, _, _, true, false) => [
-            v,
-            avg(image, [i - w, i + w, i - 1, i + 1]),
-            avg(image, [i - w - 1, i - w + 1, i + w - 1, i + w + 1]),
-        ],
+        (_, _, _, _, true, false) => calc_pixel_at_rb(image, i, w),
         // green1
-        (_, _, _, _, false, false) => [avg(image, [i - 1, i + 1]), v, avg(image, [i - w, i + w])],
+        (_, _, _, _, false, false) => calc_pixel_at_g(image, i, w),
     }
 }
-
