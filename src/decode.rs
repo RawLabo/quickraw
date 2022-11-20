@@ -28,8 +28,6 @@ pub struct DecodedImage {
     pub image: Vec<u16>,
     pub white_balance: [i32; 3],
     pub cam_matrix: [f32; 9],
-    pub scale_factor: u16,
-    pub black_level: u16,
     pub parsed_info: quickexif::ParsedInfo
 }
 

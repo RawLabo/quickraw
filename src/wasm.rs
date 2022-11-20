@@ -35,11 +35,15 @@ impl Image {
     }
 }
 
+fn expand_err<T, E: Into<anyhow::Error>>(input: Result<T, E>) -> Result<T, JsError> {
+    input.map_err(|e| JsError::new(&format!("{:?}", anyhow::anyhow!(e))))
+}
+
 macro_rules! gen_image_loader {
     ($name:ident, $rggb:ident, $grbg:ident, $gbrg:ident, $bggr:ident) => {
         #[wasm_bindgen]
         pub fn $name(input: Vec<u8>) -> Result<Image, JsError> {
-            let decoded_image = decode::decode_buffer(input)?;
+            let decoded_image = expand_err(decode::decode_buffer(input))?;
 
             let image = decoded_image.image;
             let orientation = decoded_image.orientation as isize;
@@ -126,7 +130,7 @@ pub fn encode_to_jpeg(pixels_ptr: *mut u8, width: u32, height: u32) -> Result<Ve
 
     let mut writer = Cursor::new(vec![]);
     let mut encoder = jpeg::JpegEncoder::new_with_quality(&mut writer, 98);
-    encoder.encode(&pixels, width, height, ColorType::Rgba8)?;
+    expand_err(encoder.encode(&pixels, width, height, ColorType::Rgba8))?;
 
     Ok(writer.into_inner())
 }
@@ -147,7 +151,7 @@ impl Thumbnail {
 
 #[wasm_bindgen]
 pub fn load_thumbnail(buffer: Vec<u8>) -> Result<Thumbnail, JsError> {
-    let (data, orientation) = export::load_thumbnail(&buffer)?;
+    let (data, orientation) = expand_err(export::load_thumbnail(&buffer))?;
     Ok(Thumbnail {
         data,
         orientation: orientation as isize,
