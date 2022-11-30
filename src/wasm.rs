@@ -137,8 +137,8 @@ pub fn encode_to_jpeg(pixels_ptr: *mut u8, width: u32, height: u32) -> Result<Ve
 
 #[wasm_bindgen]
 pub struct Thumbnail {
+    pub orientation: isize,
     data: Vec<u8>,
-    orientation: isize,
 }
 
 #[wasm_bindgen]
