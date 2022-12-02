@@ -1,5 +1,5 @@
-mod linear;
 mod enhanced_linear;
+mod linear;
 
 #[inline(always)]
 pub fn none<'a>(
@@ -39,15 +39,20 @@ pub(self) fn get_pixel(image: &[u16], i: usize) -> u16 {
     unsafe { *image.get_unchecked(i) }
 }
 #[inline(always)]
-pub(self) fn avg<const N: usize>(image: &[u16], indexes: [usize; N]) -> u16 {
-    (indexes
-        .into_iter()
-        .map(|i| get_pixel(image, i) as u32)
-        .sum::<u32>()
-        / N as u32) as u16
+pub(self) fn avg<const N: usize>(image: &[u16], indexes: &[usize; N]) -> u16 {
+    let mut sum = 0;
+    for &i in indexes {
+        sum += get_pixel(image, i) as u32;
+    }
+
+    (sum / N as u32) as u16
 }
 #[inline(always)]
-pub(self) fn bayer_pixel_info(i: usize, w: usize, h: usize) -> (bool, bool, bool, bool, bool, bool) {
+pub(self) fn bayer_pixel_info(
+    i: usize,
+    w: usize,
+    h: usize,
+) -> (bool, bool, bool, bool, bool, bool) {
     let x = i % w;
     let y = i / w;
     let is_top = y == 0;

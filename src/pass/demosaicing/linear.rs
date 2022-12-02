@@ -4,51 +4,51 @@ use super::*;
 pub(super) fn rggb(i: usize, v: u16, image: &[u16], w: usize, h: usize) -> [u16; 3] {
     match bayer_pixel_info(i, w, h) {
         // top left corner
-        (true, _, true, _, _, _) => [v, avg(image, [i + 1, i + w]), get_pixel(image, i + w + 1)],
+        (true, _, true, _, _, _) => [v, avg(image, &[i + 1, i + w]), get_pixel(image, i + w + 1)],
         // top right corner
         (true, _, _, true, _, _) => [get_pixel(image, i - 1), v, get_pixel(image, i + w)],
         // bottom left corner
         (_, true, true, _, _, _) => [get_pixel(image, i - w), v, get_pixel(image, i + 1)],
         // bottom right corner
-        (_, true, _, true, _, _) => [get_pixel(image, i - w - 1), avg(image, [i - w, i - 1]), v],
+        (_, true, _, true, _, _) => [get_pixel(image, i - w - 1), avg(image, &[i - w, i - 1]), v],
         // top edge
         (true, _, _, _, true, _) => [
             v,
-            avg(image, [i - 1, i + w, i + 1]),
-            avg(image, [i + w - 1, i + w + 1]),
+            avg(image, &[i - 1, i + w, i + 1]),
+            avg(image, &[i + w - 1, i + w + 1]),
         ],
-        (true, _, _, _, false, _) => [avg(image, [i - 1, i + 1]), v, get_pixel(image, i + w)],
+        (true, _, _, _, false, _) => [avg(image, &[i - 1, i + 1]), v, get_pixel(image, i + w)],
         // bottom edge
-        (_, true, _, _, true, _) => [get_pixel(image, i - w), v, avg(image, [i - 1, i + 1])],
-        (_, true, _, _, false, _) => [get_pixel(image, i - w - 1), avg(image, [i - w, i - 1]), v],
+        (_, true, _, _, true, _) => [get_pixel(image, i - w), v, avg(image, &[i - 1, i + 1])],
+        (_, true, _, _, false, _) => [get_pixel(image, i - w - 1), avg(image, &[i - w, i - 1]), v],
         // left edge
         (_, _, true, _, _, true) => [
             v,
-            avg(image, [i - w, i + 1, i + w]),
-            avg(image, [i - w + 1, i + w + 1]),
+            avg(image, &[i - w, i + 1, i + w]),
+            avg(image, &[i - w + 1, i + w + 1]),
         ],
-        (_, _, true, _, _, false) => [avg(image, [i - w, i + w]), v, get_pixel(image, i + 1)],
+        (_, _, true, _, _, false) => [avg(image, &[i - w, i + w]), v, get_pixel(image, i + 1)],
         // right edge
         (_, _, _, true, _, true) => [get_pixel(image, i - 1), v, get_pixel(image, i + w)],
         (_, _, _, true, _, false) => [
-            avg(image, [i - w - 1, i + w - 1]),
-            avg(image, [i - w, i + w, i - 1]),
+            avg(image, &[i - w - 1, i + w - 1]),
+            avg(image, &[i - w, i + w, i - 1]),
             v,
         ],
         // red
         (_, _, _, _, true, true) => [
             v,
-            avg(image, [i - w, i + w, i - 1, i + 1]),
-            avg(image, [i - w - 1, i - w + 1, i + w - 1, i + w + 1]),
+            avg(image, &[i - w, i + w, i - 1, i + 1]),
+            avg(image, &[i - w - 1, i - w + 1, i + w - 1, i + w + 1]),
         ],
         // green1
-        (_, _, _, _, false, true) => [avg(image, [i - 1, i + 1]), v, avg(image, [i - w, i + w])],
+        (_, _, _, _, false, true) => [avg(image, &[i - 1, i + 1]), v, avg(image, &[i - w, i + w])],
         // green2
-        (_, _, _, _, true, false) => [avg(image, [i - w, i + w]), v, avg(image, [i - 1, i + 1])],
+        (_, _, _, _, true, false) => [avg(image, &[i - w, i + w]), v, avg(image, &[i - 1, i + 1])],
         // blue
         (_, _, _, _, false, false) => [
-            avg(image, [i - w - 1, i - w + 1, i + w - 1, i + w + 1]),
-            avg(image, [i - w, i + w, i - 1, i + 1]),
+            avg(image, &[i - w - 1, i - w + 1, i + w - 1, i + w + 1]),
+            avg(image, &[i - w, i + w, i - 1, i + 1]),
             v,
         ],
     }
@@ -58,52 +58,52 @@ pub(super) fn rggb(i: usize, v: u16, image: &[u16], w: usize, h: usize) -> [u16;
 pub(super) fn bggr(i: usize, v: u16, image: &[u16], w: usize, h: usize) -> [u16; 3] {
     match bayer_pixel_info(i, w, h) {
         // top left corner
-        (true, _, true, _, _, _) => [get_pixel(image, i + w + 1), avg(image, [i + 1, i + w]), v],
+        (true, _, true, _, _, _) => [get_pixel(image, i + w + 1), avg(image, &[i + 1, i + w]), v],
         // top right corner
         (true, _, _, true, _, _) => [get_pixel(image, i + w), v, get_pixel(image, i - 1)],
         // bottom left corner
         (_, true, true, _, _, _) => [get_pixel(image, i + 1), v, get_pixel(image, i - w)],
         // bottom right corner
-        (_, true, _, true, _, _) => [v, avg(image, [i - w, i - 1]), get_pixel(image, i - w - 1)],
+        (_, true, _, true, _, _) => [v, avg(image, &[i - w, i - 1]), get_pixel(image, i - w - 1)],
         // top edge
         (true, _, _, _, true, _) => [
-            avg(image, [i + w - 1, i + w + 1]),
-            avg(image, [i - 1, i + w, i + 1]),
+            avg(image, &[i + w - 1, i + w + 1]),
+            avg(image, &[i - 1, i + w, i + 1]),
             v,
         ],
-        (true, _, _, _, false, _) => [get_pixel(image, i + w), v, avg(image, [i - 1, i + 1])],
+        (true, _, _, _, false, _) => [get_pixel(image, i + w), v, avg(image, &[i - 1, i + 1])],
         // bottom edge
-        (_, true, _, _, true, _) => [avg(image, [i - 1, i + 1]), v, get_pixel(image, i - w)],
-        (_, true, _, _, false, _) => [v, avg(image, [i - w, i - 1]), get_pixel(image, i - w - 1)],
+        (_, true, _, _, true, _) => [avg(image, &[i - 1, i + 1]), v, get_pixel(image, i - w)],
+        (_, true, _, _, false, _) => [v, avg(image, &[i - w, i - 1]), get_pixel(image, i - w - 1)],
         // left edge
         (_, _, true, _, _, true) => [
-            avg(image, [i - w + 1, i + w + 1]),
-            avg(image, [i - w, i + 1, i + w]),
+            avg(image, &[i - w + 1, i + w + 1]),
+            avg(image, &[i - w, i + 1, i + w]),
             v,
         ],
-        (_, _, true, _, _, false) => [get_pixel(image, i + 1), v, avg(image, [i - w, i + w])],
+        (_, _, true, _, _, false) => [get_pixel(image, i + 1), v, avg(image, &[i - w, i + w])],
         // right edge
         (_, _, _, true, _, true) => [get_pixel(image, i + w), v, get_pixel(image, i - 1)],
         (_, _, _, true, _, false) => [
             v,
-            avg(image, [i - w, i + w, i - 1]),
-            avg(image, [i - w - 1, i + w - 1]),
+            avg(image, &[i - w, i + w, i - 1]),
+            avg(image, &[i - w - 1, i + w - 1]),
         ],
         // blue
         (_, _, _, _, true, true) => [
-            avg(image, [i - w - 1, i - w + 1, i + w - 1, i + w + 1]),
-            avg(image, [i - w, i + w, i - 1, i + 1]),
+            avg(image, &[i - w - 1, i - w + 1, i + w - 1, i + w + 1]),
+            avg(image, &[i - w, i + w, i - 1, i + 1]),
             v,
         ],
         // green2
-        (_, _, _, _, false, true) => [avg(image, [i - w, i + w]), v, avg(image, [i - 1, i + 1])],
+        (_, _, _, _, false, true) => [avg(image, &[i - w, i + w]), v, avg(image, &[i - 1, i + 1])],
         // green1
-        (_, _, _, _, true, false) => [avg(image, [i - 1, i + 1]), v, avg(image, [i - w, i + w])],
+        (_, _, _, _, true, false) => [avg(image, &[i - 1, i + 1]), v, avg(image, &[i - w, i + w])],
         // red
         (_, _, _, _, false, false) => [
             v,
-            avg(image, [i - w, i + w, i - 1, i + 1]),
-            avg(image, [i - w - 1, i - w + 1, i + w - 1, i + w + 1]),
+            avg(image, &[i - w, i + w, i - 1, i + 1]),
+            avg(image, &[i - w - 1, i - w + 1, i + w - 1, i + w + 1]),
         ],
     }
 }
@@ -114,55 +114,55 @@ pub(super) fn grbg(i: usize, v: u16, image: &[u16], w: usize, h: usize) -> [u16;
         // top left corner
         (true, _, true, _, _, _) => [get_pixel(image, i + 1), v, get_pixel(image, i + w)],
         // top right corner
-        (true, _, _, true, _, _) => [v, avg(image, [i - 1, i + w]), get_pixel(image, i + w - 1)],
+        (true, _, _, true, _, _) => [v, avg(image, &[i - 1, i + w]), get_pixel(image, i + w - 1)],
         // bottom left corner
-        (_, true, true, _, _, _) => [get_pixel(image, i - w + 1), avg(image, [i - w, i + 1]), v],
+        (_, true, true, _, _, _) => [get_pixel(image, i - w + 1), avg(image, &[i - w, i + 1]), v],
         // bottom right corner
         (_, true, _, true, _, _) => [get_pixel(image, i - w), v, get_pixel(image, i - 1)],
         // top edge
-        (true, _, _, _, true, _) => [avg(image, [i - 1, i + 1]), v, get_pixel(image, i + w)],
+        (true, _, _, _, true, _) => [avg(image, &[i - 1, i + 1]), v, get_pixel(image, i + w)],
         (true, _, _, _, false, _) => [
             v,
-            avg(image, [i - 1, i + 1, i + w]),
-            avg(image, [i + w - 1, i + w + 1]),
+            avg(image, &[i - 1, i + 1, i + w]),
+            avg(image, &[i + w - 1, i + w + 1]),
         ],
         // bottom edge
         (_, true, _, _, true, _) => [
-            avg(image, [i - w - 1, i - w + 1]),
-            avg(image, [i - 1, i + 1, i - w]),
+            avg(image, &[i - w - 1, i - w + 1]),
+            avg(image, &[i - 1, i + 1, i - w]),
             v,
         ],
-        (_, true, _, _, false, _) => [get_pixel(image, i - w), v, avg(image, [i - 1, i + 1])],
+        (_, true, _, _, false, _) => [get_pixel(image, i - w), v, avg(image, &[i - 1, i + 1])],
         // left edge
-        (_, _, true, _, _, true) => [get_pixel(image, i + 1), v, avg(image, [i - w, i + w])],
+        (_, _, true, _, _, true) => [get_pixel(image, i + 1), v, avg(image, &[i - w, i + w])],
         (_, _, true, _, _, false) => [
-            avg(image, [i - w + 1, i + w + 1]),
-            avg(image, [i - w, i + w, i + 1]),
+            avg(image, &[i - w + 1, i + w + 1]),
+            avg(image, &[i - w, i + w, i + 1]),
             v,
         ],
         // right edge
         (_, _, _, true, _, true) => [
             v,
-            avg(image, [i - w, i - 1, i + w]),
-            avg(image, [i - w - 1, i + w - 1]),
+            avg(image, &[i - w, i - 1, i + w]),
+            avg(image, &[i - w - 1, i + w - 1]),
         ],
-        (_, _, _, true, _, false) => [avg(image, [i - w, i + w]), v, get_pixel(image, i - 1)],
+        (_, _, _, true, _, false) => [avg(image, &[i - w, i + w]), v, get_pixel(image, i - 1)],
         // green1
-        (_, _, _, _, true, true) => [avg(image, [i - 1, i + 1]), v, avg(image, [i - w, i + w])],
+        (_, _, _, _, true, true) => [avg(image, &[i - 1, i + 1]), v, avg(image, &[i - w, i + w])],
         // red
         (_, _, _, _, false, true) => [
             v,
-            avg(image, [i - w, i + w, i - 1, i + 1]),
-            avg(image, [i - w - 1, i - w + 1, i + w - 1, i + w + 1]),
+            avg(image, &[i - w, i + w, i - 1, i + 1]),
+            avg(image, &[i - w - 1, i - w + 1, i + w - 1, i + w + 1]),
         ],
         // blue
         (_, _, _, _, true, false) => [
-            avg(image, [i - w - 1, i - w + 1, i + w - 1, i + w + 1]),
-            avg(image, [i - w, i + w, i - 1, i + 1]),
+            avg(image, &[i - w - 1, i - w + 1, i + w - 1, i + w + 1]),
+            avg(image, &[i - w, i + w, i - 1, i + 1]),
             v,
         ],
         // green2
-        (_, _, _, _, false, false) => [avg(image, [i - w, i + w]), v, avg(image, [i - 1, i + 1])],
+        (_, _, _, _, false, false) => [avg(image, &[i - w, i + w]), v, avg(image, &[i - 1, i + 1])],
     }
 }
 
@@ -172,55 +172,55 @@ pub(super) fn gbrg(i: usize, v: u16, image: &[u16], w: usize, h: usize) -> [u16;
         // top left corner
         (true, _, true, _, _, _) => [get_pixel(image, i + w), v, get_pixel(image, i + 1)],
         // top right corner
-        (true, _, _, true, _, _) => [get_pixel(image, i + w - 1), avg(image, [i - 1, i + w]), v],
+        (true, _, _, true, _, _) => [get_pixel(image, i + w - 1), avg(image, &[i - 1, i + w]), v],
         // bottom left corner
-        (_, true, true, _, _, _) => [v, avg(image, [i - w, i + 1]), get_pixel(image, i - w + 1)],
+        (_, true, true, _, _, _) => [v, avg(image, &[i - w, i + 1]), get_pixel(image, i - w + 1)],
         // bottom right corner
         (_, true, _, true, _, _) => [get_pixel(image, i - 1), v, get_pixel(image, i - w)],
         // top edge
-        (true, _, _, _, true, _) => [get_pixel(image, i + w), v, avg(image, [i - 1, i + 1])],
+        (true, _, _, _, true, _) => [get_pixel(image, i + w), v, avg(image, &[i - 1, i + 1])],
         (true, _, _, _, false, _) => [
-            avg(image, [i + w - 1, i + w + 1]),
-            avg(image, [i - 1, i + 1, i + w]),
+            avg(image, &[i + w - 1, i + w + 1]),
+            avg(image, &[i - 1, i + 1, i + w]),
             v,
         ],
         // bottom edge
         (_, true, _, _, true, _) => [
             v,
-            avg(image, [i - 1, i + 1, i - w]),
-            avg(image, [i - w - 1, i - w + 1]),
+            avg(image, &[i - 1, i + 1, i - w]),
+            avg(image, &[i - w - 1, i - w + 1]),
         ],
-        (_, true, _, _, false, _) => [avg(image, [i - 1, i + 1]), v, get_pixel(image, i - w)],
+        (_, true, _, _, false, _) => [avg(image, &[i - 1, i + 1]), v, get_pixel(image, i - w)],
         // left edge
-        (_, _, true, _, _, true) => [avg(image, [i - w, i + w]), v, get_pixel(image, i + 1)],
+        (_, _, true, _, _, true) => [avg(image, &[i - w, i + w]), v, get_pixel(image, i + 1)],
         (_, _, true, _, _, false) => [
             v,
-            avg(image, [i - w, i + w, i + 1]),
-            avg(image, [i - w + 1, i + w + 1]),
+            avg(image, &[i - w, i + w, i + 1]),
+            avg(image, &[i - w + 1, i + w + 1]),
         ],
         // right edge
         (_, _, _, true, _, true) => [
-            avg(image, [i - w - 1, i + w - 1]),
-            avg(image, [i - w, i - 1, i + w]),
+            avg(image, &[i - w - 1, i + w - 1]),
+            avg(image, &[i - w, i - 1, i + w]),
             v,
         ],
-        (_, _, _, true, _, false) => [get_pixel(image, i - 1), v, avg(image, [i - w, i + w])],
+        (_, _, _, true, _, false) => [get_pixel(image, i - 1), v, avg(image, &[i - w, i + w])],
         // green2
-        (_, _, _, _, true, true) => [avg(image, [i - w, i + w]), v, avg(image, [i - 1, i + 1])],
+        (_, _, _, _, true, true) => [avg(image, &[i - w, i + w]), v, avg(image, &[i - 1, i + 1])],
         // blue
         (_, _, _, _, false, true) => [
-            avg(image, [i - w - 1, i - w + 1, i + w - 1, i + w + 1]),
-            avg(image, [i - w, i + w, i - 1, i + 1]),
+            avg(image, &[i - w - 1, i - w + 1, i + w - 1, i + w + 1]),
+            avg(image, &[i - w, i + w, i - 1, i + 1]),
             v,
         ],
         // red
         (_, _, _, _, true, false) => [
             v,
-            avg(image, [i - w, i + w, i - 1, i + 1]),
-            avg(image, [i - w - 1, i - w + 1, i + w - 1, i + w + 1]),
+            avg(image, &[i - w, i + w, i - 1, i + 1]),
+            avg(image, &[i - w - 1, i - w + 1, i + w - 1, i + w + 1]),
         ],
         // green1
-        (_, _, _, _, false, false) => [avg(image, [i - 1, i + 1]), v, avg(image, [i - w, i + w])],
+        (_, _, _, _, false, false) => [avg(image, &[i - 1, i + 1]), v, avg(image, &[i - w, i + w])],
     }
 }
 
@@ -236,67 +236,67 @@ pub(super) fn xtrans0(i: usize, v: u16, image: &[u16], w: usize, h: usize) -> [u
     let index = (x % 6, y % 6);
     macro_rules! avg {
         (137) => {
-            avg(image, [i - w, i - 1, i + w])
+            avg(image, &[i - w, i - 1, i + w])
         };
         (056) => {
-            avg(image, [i - w - 1, i + w - 1, i + 1])
+            avg(image, &[i - w - 1, i + w - 1, i + 1])
         };
         (238) => {
-            avg(image, [i + w + 1, i - 1, i + w + 1])
+            avg(image, &[i + w + 1, i - 1, i + w + 1])
         };
         (157) => {
-            avg(image, [i - w, i + 1, i + w])
+            avg(image, &[i - w, i + 1, i + w])
         };
         (17) => {
-            avg(image, [i - w, i + w])
+            avg(image, &[i - w, i + w])
         };
         (35) => {
-            avg(image, [i - 1, i + 1])
+            avg(image, &[i - 1, i + 1])
         };
         (16) => {
-            avg(image, [i - w, i + w - 1])
+            avg(image, &[i - w, i + w - 1])
         };
         (56) => {
-            avg(image, [i + 1, i + w - 1])
+            avg(image, &[i + 1, i + w - 1])
         };
         (23) => {
-            avg(image, [i - w + 1, i - 1])
+            avg(image, &[i - w + 1, i - 1])
         };
         (05) => {
-            avg(image, [i - w - 1, i + 1])
+            avg(image, &[i - w - 1, i + 1])
         };
         (07) => {
-            avg(image, [i - w - 1, i + w])
+            avg(image, &[i - w - 1, i + w])
         };
         (27) => {
-            avg(image, [i - w + 1, i + w])
+            avg(image, &[i - w + 1, i + w])
         };
         (18) => {
-            avg(image, [i - w, i + w + 1])
+            avg(image, &[i - w, i + w + 1])
         };
         (38) => {
-            avg(image, [i - 1, i + w + 1])
+            avg(image, &[i - 1, i + w + 1])
         };
         (135) => {
-            avg(image, [i - w, i - 1, i + 1])
+            avg(image, &[i - w, i - 1, i + 1])
         };
         (027) => {
-            avg(image, [i - w - 1, i - w + 1, i + w])
+            avg(image, &[i - w - 1, i - w + 1, i + w])
         };
         (168) => {
-            avg(image, [i - w, i + w - 1, i + w + 1])
+            avg(image, &[i - w, i + w - 1, i + w + 1])
         };
         (357) => {
-            avg(image, [i - 1, i + 1, i + w])
+            avg(image, &[i - 1, i + 1, i + w])
         };
         (35) => {
-            avg(image, [i - 1, i + 1])
+            avg(image, &[i - 1, i + 1])
         };
         (57) => {
-            avg(image, [i + 1, i + w])
+            avg(image, &[i + 1, i + w])
         };
         (37) => {
-            avg(image, [i - 1, i + w])
+            avg(image, &[i - 1, i + w])
         };
         (17) => {
             avg(image, [i - w, i + w])
@@ -394,70 +394,70 @@ pub(super) fn xtrans1(i: usize, v: u16, image: &[u16], w: usize, h: usize) -> [u
     let index = (x % 6, y % 6);
     macro_rules! avg {
         (137) => {
-            avg(image, [i - w, i - 1, i + w])
+            avg(image, &[i - w, i - 1, i + w])
         };
         (056) => {
-            avg(image, [i - w - 1, i + w - 1, i + 1])
+            avg(image, &[i - w - 1, i + w - 1, i + 1])
         };
         (238) => {
-            avg(image, [i + w + 1, i - 1, i + w + 1])
+            avg(image, &[i + w + 1, i - 1, i + w + 1])
         };
         (157) => {
-            avg(image, [i - w, i + 1, i + w])
+            avg(image, &[i - w, i + 1, i + w])
         };
         (17) => {
-            avg(image, [i - w, i + w])
+            avg(image, &[i - w, i + w])
         };
         (35) => {
-            avg(image, [i - 1, i + 1])
+            avg(image, &[i - 1, i + 1])
         };
         (16) => {
-            avg(image, [i - w, i + w - 1])
+            avg(image, &[i - w, i + w - 1])
         };
         (56) => {
-            avg(image, [i + 1, i + w - 1])
+            avg(image, &[i + 1, i + w - 1])
         };
         (23) => {
-            avg(image, [i - w + 1, i - 1])
+            avg(image, &[i - w + 1, i - 1])
         };
         (05) => {
-            avg(image, [i - w - 1, i + 1])
+            avg(image, &[i - w - 1, i + 1])
         };
         (07) => {
-            avg(image, [i - w - 1, i + w])
+            avg(image, &[i - w - 1, i + w])
         };
         (27) => {
-            avg(image, [i - w + 1, i + w])
+            avg(image, &[i - w + 1, i + w])
         };
         (18) => {
-            avg(image, [i - w, i + w + 1])
+            avg(image, &[i - w, i + w + 1])
         };
         (38) => {
-            avg(image, [i - 1, i + w + 1])
+            avg(image, &[i - 1, i + w + 1])
         };
         (135) => {
-            avg(image, [i - w, i - 1, i + 1])
+            avg(image, &[i - w, i - 1, i + 1])
         };
         (027) => {
-            avg(image, [i - w - 1, i - w + 1, i + w])
+            avg(image, &[i - w - 1, i - w + 1, i + w])
         };
         (168) => {
-            avg(image, [i - w, i + w - 1, i + w + 1])
+            avg(image, &[i - w, i + w - 1, i + w + 1])
         };
         (357) => {
-            avg(image, [i - 1, i + 1, i + w])
+            avg(image, &[i - 1, i + 1, i + w])
         };
         (35) => {
-            avg(image, [i - 1, i + 1])
+            avg(image, &[i - 1, i + 1])
         };
         (57) => {
-            avg(image, [i + 1, i + w])
+            avg(image, &[i + 1, i + w])
         };
         (37) => {
-            avg(image, [i - 1, i + w])
+            avg(image, &[i - 1, i + w])
         };
         (17) => {
-            avg(image, [i - w, i + w])
+            avg(image, &[i - w, i + w])
         };
     }
     macro_rules! p {
