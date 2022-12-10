@@ -17,8 +17,7 @@ pub struct Image {
     pub width: usize,
     pub height: usize,
     pub orientation: isize,
-    pub data_ptr: *const u16,
-    pub data_len: usize,
+    data: Vec<u16>,
     white_balance: [f32; 3],
     color_matrix: [f32; 9],
 }
@@ -32,6 +31,10 @@ impl Image {
     #[wasm_bindgen(getter)]
     pub fn color_matrix(&self) -> Vec<f32> {
         self.color_matrix.to_vec()
+    }
+    #[wasm_bindgen(getter)]
+    pub fn data(self) -> Vec<u16> {
+        self.data
     }
 }
 
@@ -71,14 +74,8 @@ macro_rules! gen_image_loader {
                 [r as f32 / g as f32, 1f32, b as f32 / g as f32]
             };
 
-            let data_ptr = data.as_ptr();
-            let data_len = data.len();
-
-            std::mem::forget(data);
-
             Ok(Image {
-                data_ptr,
-                data_len,
+                data,
                 orientation,
                 width,
                 height,
