@@ -1,9 +1,10 @@
 # Supported camera models
 
-## Nikon(partially supported)
+## Nikon
+Some shooting modes are not yet supported
 * Z5
-* Z6 
-* Z62 
+* Z6
+* Z62
 * Z7
 * Z72
 * Z9
@@ -19,6 +20,7 @@
 * D5200
 * D5100
 * D5000
+* D3500
 * D3400
 * D3300
 * D3200
@@ -38,9 +40,10 @@
 * D850
 * D2Xs
 * D3
-* D3S
+* D3s
 * D3X
 * D4
+* D4S
 * D5
 * D40
 * D40X
@@ -51,7 +54,9 @@
 * 1 J1
 * 1 J2
 * 1 J3
+* 1 J4
 * 1 J5
+* 1 S1
 * 1 S2
 * 1 V1
 * 1 V2
