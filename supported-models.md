@@ -45,6 +45,8 @@ Some shooting modes are not yet supported
 * D4
 * D4S
 * D5
+* D6
+* Df
 * D40
 * D40X
 * D60
@@ -61,6 +63,8 @@ Some shooting modes are not yet supported
 * 1 V1
 * 1 V2
 * 1 V3
+* Coolpix A
+
 
 ## Fujifilm(uncompressed)
 * X-T1
