@@ -3,6 +3,8 @@
 use decode::CFAPattern;
 use pass::*;
 
+use crate::decode::Orientation;
+
 use super::*;
 use wasm_bindgen::prelude::*;
 
@@ -85,8 +87,20 @@ macro_rules! gen_image_loader {
         }
     };
 }
-gen_image_loader!(load_image, linear_rggb, linear_grbg, linear_gbrg, linear_bggr);
-gen_image_loader!(load_image_enhanced, elinear_rggb, elinear_grbg, elinear_gbrg, elinear_bggr);
+gen_image_loader!(
+    load_image,
+    linear_rggb,
+    linear_grbg,
+    linear_gbrg,
+    linear_bggr
+);
+gen_image_loader!(
+    load_image_enhanced,
+    elinear_rggb,
+    elinear_grbg,
+    elinear_gbrg,
+    elinear_bggr
+);
 
 #[wasm_bindgen]
 pub fn calc_histogram(pixels: Vec<u8>) -> Vec<u32> {
@@ -133,24 +147,36 @@ pub fn encode_to_jpeg(pixels_ptr: *mut u8, width: u32, height: u32) -> Result<Ve
 }
 
 #[wasm_bindgen]
-pub struct Thumbnail {
+pub struct ExifWithThumbnail {
     pub orientation: isize,
-    data: Vec<u8>,
+    exif: String,
+    thumbnail: Vec<u8>,
 }
 
 #[wasm_bindgen]
-impl Thumbnail {
+impl ExifWithThumbnail {
     #[wasm_bindgen(getter)]
-    pub fn data(self) -> Vec<u8> {
-        self.data
+    pub fn thumbnail(self) -> Vec<u8> {
+        self.thumbnail
+    }
+    #[wasm_bindgen(getter)]
+    pub fn exif(&self) -> String {
+        self.exif.clone()
     }
 }
 
 #[wasm_bindgen]
-pub fn load_thumbnail(buffer: Vec<u8>) -> Result<Thumbnail, JsError> {
-    let (data, orientation) = expand_err(export::load_thumbnail(&buffer))?;
-    Ok(Thumbnail {
-        data,
+pub fn load_exif_with_thumbnail(buffer: Vec<u8>) -> Result<ExifWithThumbnail, JsError> {
+    let info = expand_err(export::load_exif(&buffer))?;
+    let exif = info.stringify_all()?;
+    let (thumbnail, orientation) = match export::load_thumbnail(&buffer) {
+        Ok(x) => x,
+        Err(_) => (vec![], Orientation::Horizontal),
+    };
+
+    Ok(ExifWithThumbnail {
         orientation: orientation as isize,
+        thumbnail,
+        exif,
     })
 }
