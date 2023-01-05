@@ -95,6 +95,7 @@ Some shooting modes are not yet supported
 
 
 ## Sony
+Some shooting modes are not yet supported
 * DSC-HX95
 * DSC-HX99
 * DSC-RX0
@@ -117,6 +118,7 @@ Some shooting modes are not yet supported
 * DSLR-A450
 * DSLR-A500
 * DSLR-A550
+* DSLR-A560
 * DSLR-A580
 * DSLR-A700
 * ILCA-68
@@ -140,7 +142,7 @@ Some shooting modes are not yet supported
 * ILCE-9
 * ILCE-9M2
 * ILCE-3000
-* ILCE-3500(color shift issue)
+* ILCE-3500
 * ILCE-5000
 * ILCE-5100
 * ILCE-6000
@@ -163,12 +165,12 @@ Some shooting modes are not yet supported
 * SLT-A33
 * SLT-A35
 * SLT-A37
-* SLT-A55
+* SLT-A55V
 * SLT-A57
 * SLT-A58
-* SLT-A65
-* SLT-A77
-* SLT-A99
+* SLT-A65V
+* SLT-A77V
+* SLT-A99V
 * ZV-1
 * ZV-E10
 
