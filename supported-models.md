@@ -66,7 +66,7 @@ Some shooting modes are not yet supported
 * Coolpix A
 
 
-## Fujifilm(uncompressed)
+## Fujifilm(uncompressed only)
 * X-T1
 * X-T2
 * X-T3
@@ -243,6 +243,11 @@ Some shooting modes are not yet supported
 
 
 ## Olympus
+* E-3
+* E-5
+* E-30
+* E-420
+* E-450
 * E-520
 * E-600
 * E-620
@@ -263,6 +268,7 @@ Some shooting modes are not yet supported
 * E-P2
 * E-P3
 * E-P5
+* E-P7
 * E-PL1
 * E-PL2
 * E-PL3
