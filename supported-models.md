@@ -66,7 +66,8 @@ Some shooting modes are not yet supported
 * Coolpix A
 
 
-## Fujifilm(uncompressed only)
+## Fujifilm
+Only uncompressed shooting modes are supported
 * X-T1
 * X-T2
 * X-T3
@@ -91,7 +92,8 @@ Some shooting modes are not yet supported
 * GFX 50S
 * GFX 100
 * GFX50S II
-* GFX100S(16bit color shift issue)
+* GFX100S
+* X-H1
 
 
 ## Sony
