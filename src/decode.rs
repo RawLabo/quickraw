@@ -1,5 +1,5 @@
-use std::{fs::File, io::Read};
 use super::*;
+use std::{fs::File, io::Read};
 
 #[allow(clippy::upper_case_acronyms)]
 #[derive(Debug)]
@@ -28,7 +28,7 @@ pub struct DecodedImage {
     pub image: Vec<u16>,
     pub white_balance: [i32; 3],
     pub cam_matrix: [f32; 9],
-    pub parsed_info: quickexif::ParsedInfo
+    pub parsed_info: quickexif::ParsedInfo,
 }
 
 pub enum Orientation {
@@ -38,7 +38,6 @@ pub enum Orientation {
     Rotate270 = 270,
 }
 
-
 pub(super) fn get_buffer_from_file(path: &str) -> Result<Vec<u8>, RawFileReadingError> {
     let mut f =
         File::open(path).map_err(|_| RawFileReadingError::FileNotExisted(path.to_owned()))?;
@@ -46,18 +45,27 @@ pub(super) fn get_buffer_from_file(path: &str) -> Result<Vec<u8>, RawFileReading
         .metadata()
         .map_err(|_| RawFileReadingError::FileMetadataReadingError(path.to_owned()))?
         .len() as usize;
-    let mut buffer = vec![0u8; len]; 
+    let mut buffer = vec![0u8; len];
     f.read(&mut buffer)
         .map_err(|_| RawFileReadingError::FileContentReadingError(path.to_owned()))?;
 
     Ok(buffer)
 }
 fn prepare_buffer(mut buffer: Vec<u8>) -> Vec<u8> {
-    buffer.extend([0u8;16]); // + 16 is for BitPumpMSB fix
+    buffer.extend([0u8; 16]); // + 16 is for BitPumpMSB fix
 
+    fuji_buffer_fix(buffer)
+}
+fn fuji_buffer_fix(buffer: Vec<u8>) -> Vec<u8> {
     if buffer[..4] == [0x46, 0x55, 0x4a, 0x49] {
-        // fuji raw fix
-        buffer.drain(148..).collect()
+        buffer[148..].to_vec()
+    } else {
+        buffer
+    }
+}
+fn fuji_buffer_slice_fix(buffer: &[u8]) -> &[u8] {
+    if buffer[..4] == [0x46, 0x55, 0x4a, 0x49] {
+        &buffer[148..]
     } else {
         buffer
     }
@@ -84,6 +92,7 @@ pub fn decode_buffer(buffer: Vec<u8>) -> Result<DecodedImage, RawFileReadingErro
 }
 
 pub(super) fn get_exif_info(buffer: &[u8]) -> Result<quickexif::ParsedInfo, RawFileReadingError> {
+    let buffer = fuji_buffer_slice_fix(buffer);
     let rule = &utility::BASIC_INFO_RULE;
     let decoder_select_info = quickexif::parse(buffer, rule)?;
     let result = maker::selector::select_and_decode_exif_info(buffer, decoder_select_info)?;
@@ -91,10 +100,9 @@ pub(super) fn get_exif_info(buffer: &[u8]) -> Result<quickexif::ParsedInfo, RawF
 }
 
 pub(super) fn get_thumbnail(buffer: &[u8]) -> Result<(&[u8], Orientation), RawFileReadingError> {
+    let buffer = fuji_buffer_slice_fix(buffer);
     let rule = &utility::BASIC_INFO_RULE;
     let decoder_select_info = quickexif::parse(buffer, rule)?;
-
     let result = maker::selector::select_and_decode_thumbnail(buffer, decoder_select_info)?;
-
     Ok(result)
 }
