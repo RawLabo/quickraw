@@ -131,7 +131,7 @@ pub fn calc_histogram(pixels: Vec<u8>) -> Vec<u32> {
 
 #[cfg(feature = "image")]
 #[wasm_bindgen]
-pub fn encode_to_jpeg(pixels_ptr: *mut u8, width: u32, height: u32) -> Result<Vec<u8>, JsError> {
+pub fn encode_to_jpeg(pixels_ptr: *mut u8, width: u32, height: u32, quality: u8) -> Result<Vec<u8>, JsError> {
     use image::codecs::jpeg;
     use image::ColorType;
     use std::io::Cursor;
@@ -140,7 +140,7 @@ pub fn encode_to_jpeg(pixels_ptr: *mut u8, width: u32, height: u32) -> Result<Ve
     let pixels = unsafe { Vec::from_raw_parts(pixels_ptr, len, len) };
 
     let mut writer = Cursor::new(vec![]);
-    let mut encoder = jpeg::JpegEncoder::new_with_quality(&mut writer, 98);
+    let mut encoder = jpeg::JpegEncoder::new_with_quality(&mut writer, quality);
     expand_err(encoder.encode(&pixels, width, height, ColorType::Rgba8))?;
 
     Ok(writer.into_inner())
