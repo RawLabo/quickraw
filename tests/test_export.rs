@@ -10,3 +10,10 @@ fn test_export() {
         format!("{} {} {}", image.len(), width, height)
     )
 }
+
+#[test]
+fn test_dng0() {
+    let options = export::Options::new(data::GAMMA_SRGB, &data::XYZ2SRGB, false);
+    let (image, width, height) = export::load_image_from_file("tests/sample1.dng", options).unwrap();
+    println!("{} {} {}", image.len(), width, height);
+}

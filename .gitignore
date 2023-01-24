@@ -11,6 +11,7 @@ Cargo.lock
 
 .DS_Store
 *.ARW
+*.dng
 
 /libquickraw.xcframework/
 

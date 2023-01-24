@@ -66,17 +66,11 @@ pub(super) static IMAGE_RULE: Lazy<quickexif::ParsingRule> = Lazy::new(|| {
         if black_level_len == 1 {
             0xc61a : u16 / black_level
         } else {
-            if is_adobe_dng_converted ? {
-                0xc61a {
-                    r64 + 0 / black_level
-                }
-            } else {
-                0xc61a {
-                    u16 + 0 / black_level
-                }
+            0xc61a {
+                r64 + 0 / black_level
             }
         }
-        0x0111? / strip
+        0x0111? / strip(strip_offsets_count)
         if strip ?
         {
             0x0117 / strip_len
@@ -218,9 +212,18 @@ impl RawDecoder for General {
 
         let image: Vec<u16> = match compression {
             1 => {
-                let offset = self.info.usize("strip")?;
-                let len = self.info.usize("strip_len")?;
-                let buf = &buffer[offset..offset + len];
+                let offset_addr = self.info.usize("strip")?;
+                let offset_count = self.info.usize("strip_offsets_count")?;
+                let len_addr = self.info.usize("strip_len")?;
+
+                let buf = if (offset_count) > 1 {
+                    let strip_addr = buffer.u32(self.info.is_le, offset_addr) as usize;
+                    let tile_count = buffer.u32(self.info.is_le, len_addr) as usize;
+                    &buffer[strip_addr..strip_addr + tile_count * offset_count]
+                } else {
+                    &buffer[offset_addr..offset_addr + len_addr]
+                };
+
                 match bps {
                     12 => to_image!(to_12bit_iter_packed(buf, self.info.is_le)),
                     14 => to_image!(to_14bit_iter_packed(buf, self.info.is_le)),
@@ -248,7 +251,10 @@ impl RawDecoder for General {
         };
 
         if image.len() != width * height {
-            Err(DecodingError::InvalidDecodedImageSize(image.len(), width * height))
+            Err(DecodingError::InvalidDecodedImageSize(
+                image.len(),
+                width * height,
+            ))
         } else {
             Ok(image)
         }

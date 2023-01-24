@@ -1,9 +1,14 @@
 #![allow(dead_code)]
 
+use std::io::Cursor;
+
 use decode::CFAPattern;
 use pass::*;
 
-use crate::decode::Orientation;
+use crate::{
+    decode::Orientation,
+    utility::{log2, ArrayMulNum},
+};
 
 use super::*;
 use wasm_bindgen::prelude::*;
@@ -131,10 +136,14 @@ pub fn calc_histogram(pixels: Vec<u8>) -> Vec<u32> {
 
 #[cfg(feature = "image")]
 #[wasm_bindgen]
-pub fn encode_to_jpeg(pixels_ptr: *mut u8, width: u32, height: u32, quality: u8) -> Result<Vec<u8>, JsError> {
+pub fn encode_to_jpeg(
+    pixels_ptr: *mut u8,
+    width: u32,
+    height: u32,
+    quality: u8,
+) -> Result<Vec<u8>, JsError> {
     use image::codecs::jpeg;
     use image::ColorType;
-    use std::io::Cursor;
 
     let len = (width * height * 4) as usize;
     let pixels = unsafe { Vec::from_raw_parts(pixels_ptr, len, len) };
@@ -165,13 +174,78 @@ impl ExifWithThumbnail {
     }
 }
 
+fn quick_image_load(
+    input: Vec<u8>,
+) -> Result<(Vec<u8>, u32, u32, Orientation), RawFileReadingError> {
+    let decoded_image = decode::decode_buffer(input)?;
+
+    let width = decoded_image.width;
+    let image = decoded_image
+        .image
+        .chunks(width * 4)
+        .enumerate()
+        .map(|(row_index, row)| {
+            let left_bound = row_index % 4 * width;
+            row[left_bound..left_bound + width]
+                .chunks(4)
+                .enumerate()
+                .map(|(column_index, values)| values[column_index % 4])
+                .collect::<Vec<_>>()
+        })
+        .flatten()
+        .collect::<Vec<_>>();
+
+    let orientation = decoded_image.orientation;
+    let width = decoded_image.width / 4;
+    let height = decoded_image.height / 4;
+
+    let gamma_lut = gen_gamma_lut(0.45);
+    let color_matrix = utility::matrix3_mul(&data::XYZ2SRGB, &decoded_image.cam_matrix);
+    let color_matrix = color_matrix.mul(1 << BIT_SHIFT);
+    let white_balance = decoded_image
+        .white_balance
+        .mul(1 << (BIT_SHIFT - log2(decoded_image.white_balance[1])));
+
+    let iter = image.iter().copied();
+    let data = pass::iters_to_vec!(
+        iter
+            ..enumerate()
+            [decoded_image.cfa_pattern] {
+                CFAPattern::RGGB => .linear_rggb(&image, width, height),
+                CFAPattern::GRBG => .linear_grbg(&image, width, height),
+                CFAPattern::GBRG => .linear_gbrg(&image, width, height),
+                CFAPattern::BGGR => .linear_bggr(&image, width, height),
+                CFAPattern::XTrans0 => .linear_xtrans0(&image, width, height),
+                CFAPattern::XTrans1 => .linear_xtrans1(&image, width, height)
+            }
+            .u16rgb_to_i32rgb()
+            .white_balance_fix(&white_balance)
+            .color_convert(&color_matrix)
+            .gamma_correct(&gamma_lut)
+            .i32rgb_to_u8rgb()
+            ..flatten()
+    );
+
+    Ok((data, width as u32, height as u32, orientation))
+}
+
 #[wasm_bindgen]
 pub fn load_exif_with_thumbnail(buffer: Vec<u8>) -> Result<ExifWithThumbnail, JsError> {
     let info = expand_err(export::load_exif(&buffer))?;
     let exif = info.stringify_all()?;
     let (thumbnail, orientation) = match export::load_thumbnail(&buffer) {
         Ok(x) => x,
-        Err(_) => (vec![], Orientation::Horizontal),
+        Err(_) => {
+            use image::codecs::jpeg;
+            use image::ColorType;
+
+            let (data, width, height, orientation) = quick_image_load(buffer)?;
+            let mut writer = Cursor::new(vec![]);
+            let mut encoder = jpeg::JpegEncoder::new_with_quality(&mut writer, 80);
+            expand_err(encoder.encode(&data, width, height, ColorType::Rgb8))?;
+
+            (writer.into_inner(), orientation)
+        }
     };
 
     Ok(ExifWithThumbnail {

@@ -4,6 +4,12 @@ pub fn u16rgb_to_i32rgb(iter: impl Iterator<Item = [u16; 3]>) -> impl Iterator<I
     iter.map(|[r, g, b]| [r as i32, g as i32, b as i32])
 }
 
+#[inline(always)]
+pub fn i32rgb_to_u8rgb(iter: impl Iterator<Item = [u16; 3]>) -> impl Iterator<Item = [u8; 3]> {
+    iter.map(|[r, g, b]| [(r / 257) as u8, (g / 257) as u8, (b / 257) as u8])
+}
+
+
 // #[inline(always)]
 // pub fn sub_black_level(
 //     iter: impl Iterator<Item = u16>,
