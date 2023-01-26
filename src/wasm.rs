@@ -222,7 +222,7 @@ fn quick_image_load(
             .white_balance_fix(&white_balance)
             .color_convert(&color_matrix)
             .gamma_correct(&gamma_lut)
-            .i32rgb_to_u8rgb()
+            .u16rgb_to_u8rgb()
             ..flatten()
     );
 

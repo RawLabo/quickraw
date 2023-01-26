@@ -5,8 +5,8 @@ pub fn u16rgb_to_i32rgb(iter: impl Iterator<Item = [u16; 3]>) -> impl Iterator<I
 }
 
 #[inline(always)]
-pub fn i32rgb_to_u8rgb(iter: impl Iterator<Item = [u16; 3]>) -> impl Iterator<Item = [u8; 3]> {
-    iter.map(|[r, g, b]| [(r / 257) as u8, (g / 257) as u8, (b / 257) as u8])
+pub fn u16rgb_to_u8rgb(iter: impl Iterator<Item = [u16; 3]>) -> impl Iterator<Item = [u8; 3]> {
+    iter.map(|[r, g, b]| [(r >> 8) as u8, (g >> 8) as u8, (b >> 8) as u8])
 }
 
 
