@@ -1,11 +1,10 @@
 use super::byte_stream::ByteStream;
-use super::huffman::HuffTable;
-use super::*;
+use super::huffman::*;
+use super::DecodingError;
 use decompressors::*;
 
 mod decompressors;
 
-#[allow(clippy::upper_case_acronyms)]
 enum Marker {
     Stuff = 0x00,
     SOF3 = 0xc3, // lossless
@@ -24,8 +23,9 @@ fn m(marker: Marker) -> u8 {
 #[derive(Debug, Copy, Clone)]
 struct JpegComponentInfo {
     // These values are fixed over the whole image, read from the SOF marker.
-    id: usize,    // identifier for this component (0..255)
-    // index: usize, // its index in SOF or cPtr->compInfo[]
+    id: usize, // identifier for this component (0..255)
+    #[allow(dead_code)]
+    index: usize, // its index in SOF or cPtr->compInfo[]
 
     // Huffman table selector (0..3). The value may vary between scans.
     // It is read from the SOS marker.
@@ -56,7 +56,7 @@ impl SOFInfo {
         }
     }
 
-    fn parse_sof(&mut self, input: &mut ByteStream) -> Result<(), DecodingError> {
+    fn parse_sof(&mut self, input: &mut ByteStream) -> Result<(), String> {
         let header_length = input.get_u16() as usize;
         self.precision = input.get_u8() as usize;
         self.height = input.get_u16() as usize;
@@ -64,23 +64,23 @@ impl SOFInfo {
         self.cps = input.get_u8() as usize;
 
         if self.precision > 16 {
-            return Err(DecodingError::LJpegError("ljpeg: More than 16 bits per channel is not supported."));
+            return Err("ljpeg: More than 16 bits per channel is not supported.".to_string());
         }
         if self.cps > 4 || self.cps < 1 {
-            return Err(DecodingError::LJpegError("ljpeg: Only from 1 to 4 components are supported."));
+            return Err("ljpeg: Only from 1 to 4 components are supported.".to_string());
         }
         if header_length != 8 + self.cps * 3 {
-            return Err(DecodingError::LJpegError("ljpeg: Header size mismatch."));
+            return Err("ljpeg: Header size mismatch.".to_string());
         }
 
-        for _ in 0..self.cps {
+        for i in 0..self.cps {
             let id = input.get_u8() as usize;
             let subs = input.get_u8() as usize;
             input.get_u8(); // Skip info about quantized
 
             self.components.push(JpegComponentInfo {
                 id,
-                // index: i,
+                index: i,
                 dc_tbl_num: 0,
                 super_v: subs & 0xf,
                 super_h: subs >> 4,
@@ -89,14 +89,14 @@ impl SOFInfo {
         Ok(())
     }
 
-    fn parse_sos(&mut self, input: &mut ByteStream) -> Result<(usize, usize), DecodingError> {
+    fn parse_sos(&mut self, input: &mut ByteStream) -> Result<(usize, usize), String> {
         if self.width == 0 {
-            return Err(DecodingError::LJpegError("ljpeg: Trying to parse SOS before SOF"));
+            return Err("ljpeg: Trying to parse SOS before SOF".to_string());
         }
         input.get_u16(); //skip header length
         let soscps = input.get_u8() as usize;
         if self.cps != soscps {
-            return Err(DecodingError::LJpegError("ljpeg: component number mismatch in SOS"));
+            return Err("ljpeg: component number mismatch in SOS".to_string());
         }
         for cs in 0..self.cps {
             // At least some MOS cameras have this broken
@@ -104,11 +104,11 @@ impl SOFInfo {
             let cs = if self.csfix { cs } else { readcs };
             let component = match self.components.iter_mut().find(|&&mut c| c.id == cs) {
                 Some(val) => val,
-                None => return Err(DecodingError::LJpegError("ljpeg: invalid component selector")),
+                None => return Err(format!("ljpeg: invalid component selector {}", cs)),
             };
             let td = (input.get_u8() as usize) >> 4;
             if td > 3 {
-                return Err(DecodingError::LJpegError("ljpeg: Invalid Huffman table selection"));
+                return Err("ljpeg: Invalid Huffman table selection".to_string());
             }
             component.dc_tbl_num = td;
         }
@@ -120,7 +120,7 @@ impl SOFInfo {
 }
 
 #[derive(Debug)]
-pub(in super::super) struct LjpegDecompressor<'a> {
+pub struct LjpegDecompressor<'a> {
     buffer: &'a [u8],
     sof: SOFInfo,
     predictor: usize,
@@ -129,20 +129,25 @@ pub(in super::super) struct LjpegDecompressor<'a> {
 }
 
 impl<'a> LjpegDecompressor<'a> {
-    pub(in super::super) fn new(src: &'a [u8]) -> Result<LjpegDecompressor, DecodingError> {
+    pub fn new(src: &'a [u8]) -> Result<LjpegDecompressor, DecodingError> {
         LjpegDecompressor::new_full(src, false, false)
+            .map_err(|err| DecodingError::LJpegErrorConstructor(err))
     }
 
-    pub(in super::super) fn new_full(src: &'a [u8], dng_bug: bool, csfix: bool) -> Result<LjpegDecompressor, DecodingError> {
+    pub fn new_full(
+        src: &'a [u8],
+        dng_bug: bool,
+        csfix: bool,
+    ) -> Result<LjpegDecompressor, String> {
         let mut input = ByteStream::new(src, false);
         if LjpegDecompressor::get_next_marker(&mut input, false)? != m(Marker::SOI) {
-            return Err(DecodingError::LJpegError("ljpeg: Image did not start with SOI. Probably not LJPEG"));
+            return Err("ljpeg: Image did not start with SOI. Probably not LJPEG".to_string());
         }
 
         let mut sof = SOFInfo::empty(csfix);
         let mut dht_init = [false; 4];
-        let mut dht_bits = [[0u32; 17]; 4];
-        let mut dht_huffval = [[0u32; 256]; 4];
+        let mut dht_bits = [[0_u32; 17]; 4];
+        let mut dht_huffval = [[0_u32; 256]; 4];
         let pred;
         let pt;
         loop {
@@ -150,12 +155,17 @@ impl<'a> LjpegDecompressor<'a> {
             if marker == m(Marker::SOF3) {
                 // Start of the frame, giving us the basic info
                 sof.parse_sof(&mut input)?;
-                if sof.precision > 16 || sof.precision < 12 {
-                    return Err(DecodingError::LJpegError("sof.precision"));
+                if sof.precision > 16 || sof.precision < 10 {
+                    return Err(format!("ljpeg: sof.precision {}", sof.precision));
                 }
             } else if marker == m(Marker::DHT) {
                 // Huffman table settings
-                LjpegDecompressor::parse_dht(&mut input, &mut dht_init, &mut dht_bits, &mut dht_huffval)?;
+                LjpegDecompressor::parse_dht(
+                    &mut input,
+                    &mut dht_init,
+                    &mut dht_bits,
+                    &mut dht_huffval,
+                )?;
             } else if marker == m(Marker::SOS) {
                 // Start of the actual stream, we can decode after this
                 let (a, b) = sof.parse_sos(&mut input)?;
@@ -164,19 +174,34 @@ impl<'a> LjpegDecompressor<'a> {
                 break;
             } else if marker == m(Marker::EOI) {
                 // Should never be reached as we stop at SOS
-                return Err(DecodingError::LJpegError("ljpeg: reached EOI before SOS"));
+                return Err("ljpeg: reached EOI before SOS".to_string());
             } else if marker == m(Marker::DQT) {
-                return Err(DecodingError::LJpegError("ljpeg: not a valid raw file, found DQT"));
+                return Err("ljpeg: not a valid raw file, found DQT".to_string());
             }
         }
 
         let mut dhts = Vec::new();
         for i in 0..4 {
             dhts.push(if dht_init[i] {
-                HuffTable::new(dht_bits[i], dht_huffval[i], dng_bug)
+                HuffTable::new(dht_bits[i], dht_huffval[i], dng_bug).unwrap()
             } else {
                 HuffTable::empty()
             });
+        }
+
+        // log::debug!(
+        //     "LJPEGDecompressor: super_h: {}, super_v: {}, pred: {}, pt: {}, prec: {}",
+        //     sof.components[0].super_h,
+        //     sof.components[0].super_v,
+        //     pred,
+        //     pt,
+        //     sof.precision
+        // );
+
+        if sof.components[0].super_h == 2 && sof.components[0].super_v == 2 {
+            // log::debug!("LJPEG with YUV 4:2:0 encoding");
+        } else if sof.components[0].super_h == 2 && sof.components[0].super_v == 1 {
+            // log::debug!("LJPEG with YUV 4:2:2 encoding");
         }
 
         let offset = input.get_pos();
@@ -189,18 +214,18 @@ impl<'a> LjpegDecompressor<'a> {
         })
     }
 
-    fn get_next_marker(input: &mut ByteStream, allowskip: bool) -> Result<u8, DecodingError> {
+    fn get_next_marker(input: &mut ByteStream, allowskip: bool) -> Result<u8, String> {
         if !allowskip {
             if input.get_u8() != 0xff {
-                return Err(DecodingError::LJpegError("ljpeg: (noskip) expected marker not found"));
+                return Err("ljpeg: (noskip) expected marker not found".to_string());
             }
             let mark = input.get_u8();
             if mark == m(Marker::Stuff) || mark == m(Marker::Fill) {
-                return Err(DecodingError::LJpegError("ljpeg: (noskip) expected marker but found stuff or fill"));
+                return Err("ljpeg: (noskip) expected marker but found stuff or fill".to_string());
             }
             return Ok(mark);
         }
-        input.skip_to_marker()?;
+        input.skip_to_marker().unwrap();
 
         Ok(input.get_u8())
     }
@@ -210,7 +235,7 @@ impl<'a> LjpegDecompressor<'a> {
         init: &mut [bool; 4],
         bits: &mut [[u32; 17]; 4],
         huffval: &mut [[u32; 256]; 4],
-    ) -> Result<(), DecodingError> {
+    ) -> Result<(), String> {
         let mut length = (input.get_u16() as usize) - 2;
 
         while length > 0 {
@@ -219,10 +244,10 @@ impl<'a> LjpegDecompressor<'a> {
             let th = b & 0xf;
 
             if tc != 0 {
-                return Err(DecodingError::LJpegError("ljpeg: unsupported table class in DHT"));
+                return Err("ljpeg: unsuported table class in DHT".to_string());
             }
             if th > 3 {
-                return Err(DecodingError::LJpegError("ljpeg: unsupported table id"));
+                return Err(format!("ljpeg: unsuported table id {}", th));
             }
 
             let mut acc: usize = 0;
@@ -233,11 +258,11 @@ impl<'a> LjpegDecompressor<'a> {
             bits[th][0] = 0;
 
             if acc > 256 {
-                return Err(DecodingError::LJpegError("ljpeg: invalid DHT table"));
+                return Err("ljpeg: invalid DHT table".to_string());
             }
 
             if length < 1 + 16 + acc {
-                return Err(DecodingError::LJpegError("ljpeg: invalid DHT table length"));
+                return Err("ljpeg: invalid DHT table length".to_string());
             }
 
             for i in 0..acc {
@@ -251,83 +276,123 @@ impl<'a> LjpegDecompressor<'a> {
         Ok(())
     }
 
-    pub(in super::super) fn decode(
+    /// Handle special SONY YUV 4:2:0 encoding in ILCE-7RM5
+    // pub fn decode_sony(
+    //     &self,
+    //     out: &mut [u16],
+    //     x: usize,
+    //     stripwidth: usize,
+    //     width: usize,
+    //     height: usize,
+    //     dummy: bool,
+    // ) -> Result<(), String> {
+    //     if dummy {
+    //         return Ok(());
+    //     }
+    //     // log::debug!("LJPEG decode with special Sony mode");
+    //     if self.sof.components[0].super_h == 2 && self.sof.components[0].super_v == 2 {
+    //         decode_sony_ljpeg_420(self, out, width, height)
+    //     } else if self.sof.components[0].super_h == 2 && self.sof.components[0].super_v == 1 {
+    //         decode_ljpeg_422(self, out, width, height)
+    //     } else if self.sof.components[0].super_h == 1 && self.sof.components[0].super_v == 1 {
+    //         match self.predictor {
+    //             1 | 2 | 3 | 4 | 5 | 6 | 7 => decode_ljpeg(self, out, x, stripwidth, width, height),
+    //             8 => decode_hasselblad(self, out, width),
+    //             p => Err(format!("ljpeg: predictor {} not supported", p)),
+    //         }
+    //     } else {
+    //         Err(format!(
+    //             "ljpeg: unsupported interleave configuration, super_h: {}, super_v: {}",
+    //             self.sof.components[0].super_h, self.sof.components[0].super_v
+    //         ))
+    //     }
+    // }
+
+    pub fn decode(
         &self,
         out: &mut [u16],
         x: usize,
         stripwidth: usize,
         width: usize,
         height: usize,
-        dummy: bool,
     ) -> Result<(), DecodingError> {
-        if dummy {
-            return Ok(());
-        }
-
-        if self.sof.components[0].super_h == 2 && self.sof.components[0].super_v == 2 {
-            return decode_ljpeg_420(self, out, width, height);
+        let result = if self.sof.components[0].super_h == 2 && self.sof.components[0].super_v == 2 {
+            decode_ljpeg_420(self, out, width, height)
         } else if self.sof.components[0].super_h == 2 && self.sof.components[0].super_v == 1 {
-            return decode_ljpeg_422(self, out, width, height);
-        }
-
-        match self.predictor {
-            1 => match self.sof.cps {
-                2 => decode_ljpeg_2components(self, out, x, stripwidth, width, height),
-                3 => decode_ljpeg_3components(self, out, x, stripwidth, width, height),
-                4 => decode_ljpeg_4components(self, out, width, height),
-                c => Err(DecodingError::LJpegComponentFilesNotSupported(c)),
-            },
-            8 => decode_hasselblad(self, out, width),
-            p => Err(DecodingError::LJpegPredictorNotSupported(p)),
-        }
+            decode_ljpeg_422(self, out, width, height)
+        } else if self.sof.components[0].super_h == 1 && self.sof.components[0].super_v == 1 {
+            match self.predictor {
+                1 | 2 | 3 | 4 | 5 | 6 | 7 => decode_ljpeg(self, out, x, stripwidth, width, height),
+                8 => decode_hasselblad(self, out, width),
+                p => Err(format!("ljpeg: predictor {} not supported", p)),
+            }
+        } else {
+            Err(format!(
+                "ljpeg: unsupported interleave configuration, super_h: {}, super_v: {}",
+                self.sof.components[0].super_h, self.sof.components[0].super_v
+            ))
+        };
+        result.map_err(|err| DecodingError::LJpegError(err))
     }
 
-    // pub(in super::super) fn decode_leaf(&self, width: usize, height: usize) -> Result<Vec<u16>> {
-    //     let mut offsets = vec![0 as usize; 1];
-    //     let mut input = ByteStream::new(self.buffer, false);
-    //     loop {
-    //         match LjpegDecompressor::get_next_marker(&mut input, true) {
-    //             Ok(marker) => {
-    //                 if marker == m(Marker::EOI) {
-    //                     break;
-    //                 }
-    //                 offsets.push(input.get_pos());
-    //             }
-    //             Err(_) => break,
+    // pub fn decode_leaf(&self, width: usize, height: usize) -> Result<PixU16, String> {
+    //     let mut offsets = vec![0_usize; 1];
+    //     let mut input = ByteStream::new(self.buffer, Endian::Big);
+
+    //     while let Ok(marker) = LjpegDecompressor::get_next_marker(&mut input, true) {
+    //         if marker == m(Marker::EOI) {
+    //             break;
     //         }
+    //         offsets.push(input.get_pos());
     //     }
     //     let nstrips = (height - 1) / 8 + 1;
     //     if offsets.len() != nstrips {
-    //         return Err(DecodingError::LJpegError("MOS: expecting strips found"));
+    //         return Err(format!(
+    //             "MOS: expecting {} strips found {}",
+    //             nstrips,
+    //             offsets.len()
+    //         ));
     //     }
 
-    //     let ref htable1 = self.dhts[self.sof.components[0].dc_tbl_num];
-    //     let ref htable2 = self.dhts[self.sof.components[1].dc_tbl_num];
+    //     let htable1 = &self.dhts[self.sof.components[0].dc_tbl_num];
+    //     let htable2 = &self.dhts[self.sof.components[1].dc_tbl_num];
     //     let bpred = 1 << (self.sof.precision - self.point_transform - 1);
-
-    //     let mut out: Vec<u16> = vec![0u16;width * height];
-    //     out.chunks_mut(width * 8).enumerate().for_each(|(row, strip)| {
-    //       let block = row * 8;
-          
-    //       let block = block / 8;
-    //       let offset = offsets[block];
-    //       let nlines = strip.len() / width;
-    //       decode_leaf_strip(&self.buffer[offset..], strip, width, nlines, htable1, htable2, bpred).unwrap();
-    //     });
-
-    //     Ok(out)
+    //     Ok(decode_threaded_multiline(
+    //         width,
+    //         height,
+    //         8,
+    //         false,
+    //         &(|strip: &mut [u16], block| {
+    //             let block = block / 8;
+    //             let offset = offsets[block];
+    //             let nlines = strip.len() / width;
+    //             decode_leaf_strip(
+    //                 &self.buffer[offset..],
+    //                 strip,
+    //                 width,
+    //                 nlines,
+    //                 htable1,
+    //                 htable2,
+    //                 bpred,
+    //             )
+    //             .unwrap();
+    //         }),
+    //     ))
     // }
 
-    // pub(in super::super) fn width(&self) -> usize {
+    // pub fn width(&self) -> usize {
     //     self.sof.width * self.sof.cps
     // }
-    // pub(in super::super) fn height(&self) -> usize {
+    // pub fn height(&self) -> usize {
     //     self.sof.height
     // }
-    // pub(in super::super) fn super_v(&self) -> usize {
+    // pub fn super_v(&self) -> usize {
     //     self.sof.components[0].super_v
     // }
-    // pub(in super::super) fn super_h(&self) -> usize {
+    // pub fn super_h(&self) -> usize {
     //     self.sof.components[0].super_h
     // }
+    pub fn components(&self) -> usize {
+        self.sof.components.len()
+    }
 }

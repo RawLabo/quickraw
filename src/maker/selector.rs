@@ -109,7 +109,7 @@ pub(in super::super) fn select_and_decode(
             let height = raw_info.usize("height")?;
 
             let decoder = $t::General::new(raw_info);
-            let cfa_pattern = decoder.get_cfa_pattern()?;
+            let cfa_pattern = decoder.get_cfa_pattern().unwrap_or(CFAPattern::RGGB);
             let crop = decoder.get_crop();
             let orientation = decoder.get_orientation();
             let white_balance = decoder.get_white_balance()?;

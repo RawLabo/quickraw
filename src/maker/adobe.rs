@@ -3,7 +3,6 @@ use once_cell::sync::Lazy;
 
 use super::utility::GetNumFromBytes;
 use super::{decode_utility::ljpeg::LjpegDecompressor, utility::*};
-use std::cmp;
 
 pub(super) struct General {
     info: quickexif::ParsedInfo,
@@ -13,6 +12,7 @@ pub(super) static THUMBNAIL_RULE: Lazy<quickexif::ParsingRule> = Lazy::new(|| {
     quickexif::describe_rule!(tiff {
         0x0112 : u16 / orientation
         0x014a? / sub_ifd(sub_ifd_count)
+        0x828e? / cfa_pattern
         if sub_ifd_count ?
         {
             if sub_ifd_count > 2
@@ -41,6 +41,13 @@ pub(super) static THUMBNAIL_RULE: Lazy<quickexif::ParsingRule> = Lazy::new(|| {
                 }
             }
         }
+        if cfa_pattern ? {
+
+        } else {
+            0x0100 : u16 / orientation // use width tag to force Horizontal orientation
+            0x0111 / thumbnail
+            0x0117 / thumbnail_len
+        }
     })
 });
 
@@ -52,6 +59,7 @@ pub(super) static IMAGE_RULE: Lazy<quickexif::ParsingRule> = Lazy::new(|| {
         0x0103 : u16 / compression
         0x828e? / cfa_pattern
         0xc61d / wl(white_level_len)
+
         if white_level_len == 1
         {
             0xc61d : u16 / white_level
@@ -77,7 +85,8 @@ pub(super) static IMAGE_RULE: Lazy<quickexif::ParsingRule> = Lazy::new(|| {
         }
         else
         {
-            0x0144 / tile_offsets
+            0x0144 / tile_offsets(tile_offsets_count)
+            0x0145 / tile_byte_counts
             0x0142 / tile_width
             0x0143 / tile_len
         }
@@ -211,7 +220,7 @@ impl RawDecoder for General {
         }
 
         let image: Vec<u16> = match compression {
-            1 => {
+            1 => { // uncompressed dng
                 let offset_addr = self.info.usize("strip")?;
                 let offset_count = self.info.usize("strip_offsets_count")?;
                 let len_addr = self.info.usize("strip_len")?;
@@ -231,26 +240,35 @@ impl RawDecoder for General {
                 }
             }
             7 => {
-                let tile_offsets = self.info.usize("tile_offsets")?;
+                // only support Apple ProRaw now
+                let byte_counts_addr = self.info.usize("tile_byte_counts")?;
+                let tile_offsets_count = self.info.usize("tile_offsets_count")?;
+                let tile_offsets_addr = self.info.usize("tile_offsets")?;
                 let tile_width = self.info.usize("tile_width")?;
                 let tile_len = self.info.usize("tile_len")?;
-                to_image!(load_compressed(
-                    buffer,
-                    width,
-                    height,
-                    tile_offsets,
-                    tile_width,
-                    tile_len,
-                    self.info.is_le
-                )
-                .iter())
+
+                let offsets_iter =
+                    buffer[tile_offsets_addr..tile_offsets_addr + 4 * tile_offsets_count].chunks(4);
+                let counts_iter =
+                    buffer[byte_counts_addr..byte_counts_addr + 4 * tile_offsets_count].chunks(4);
+
+                let tiles = offsets_iter
+                    .zip(counts_iter)
+                    .map(|(offset_bytes, count_bytes)| {
+                        let offset_addr = offset_bytes.u32(self.info.is_le, 0) as usize;
+                        let count_addr = count_bytes.u32(self.info.is_le, 0) as usize;
+                        (offset_addr, count_addr)
+                    })
+                    .collect::<Vec<_>>();
+
+                load_compressed(buffer, width, height, tiles, tile_width, tile_len)?
             }
             _ => {
                 unimplemented!()
             }
         };
 
-        if image.len() != width * height {
+        if image.len() != width * height && image.len() != width * height * 3 {
             Err(DecodingError::InvalidDecodedImageSize(
                 image.len(),
                 width * height,
@@ -265,30 +283,40 @@ fn load_compressed(
     buffer: &[u8],
     width: usize,
     height: usize,
-    tile_offsets: usize,
+    tiles: Vec<(usize, usize)>,
     tile_width: usize,
-    tile_len: usize,
-    is_le: bool,
-) -> Vec<u16> {
-    let coltiles = (width - 1) / tile_width + 1;
+    tile_height: usize,
+) -> Result<Vec<u16>, DecodingError> {
+    let mut out = vec![0u16; width * height * 3];
 
-    let mut out = vec![0u16; width * height];
-    out.chunks_mut(width * tile_len)
-        .enumerate()
-        .for_each(|(row, strip)| {
-            for col in 0..coltiles {
-                let offset =
-                    (&buffer[tile_offsets..]).u32(is_le, (row * coltiles + col) * 4) as usize;
-                let src = &buffer[offset..];
-                let bwidth = cmp::min(width, (col + 1) * tile_width) - col * tile_width;
-                let blength = cmp::min(height, (row + 1) * tile_len) - row * tile_len;
+    let tile_count_per_row = width / tile_width;
 
-                let decompressor = LjpegDecompressor::new(src).unwrap();
-                decompressor
-                    .decode(strip, col * tile_width, width, bwidth, blength, false)
-                    .unwrap();
-            }
-        });
+    for (tile_index, (addr, size)) in tiles.into_iter().enumerate() {
+        let col = tile_index % tile_count_per_row * tile_width * 3;
+        let row = tile_index / tile_count_per_row * tile_height;
 
-    out
+        let mut tile_out = vec![0u16; tile_width * tile_height * 3];
+
+        let src = &buffer[addr..addr + size];
+        let decompressor = LjpegDecompressor::new(src)?;
+
+        decompressor.decode(
+            &mut tile_out,
+            0,
+            tile_width * 3,
+            tile_width * 3,
+            tile_height,
+        )?;
+
+        tile_out
+            .chunks(tile_width * 3)
+            .enumerate()
+            .for_each(|(offset_row, data)| {
+                let start = col + (row + offset_row) * width * 3;
+                let end = start + tile_width * 3;
+                (&mut out[start..end]).copy_from_slice(data);
+            });
+    }
+
+    Ok(out)
 }

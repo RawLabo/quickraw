@@ -69,4 +69,6 @@ pub enum DecodingError {
     RawInfoError(#[from] quickexif::parsed_info::Error),
     #[error("The decoded image size({0}) is invalid due to the width x height = {1}.")]
     InvalidDecodedImageSize(usize, usize),
+    #[error("JPEG error.")]
+    LJPEGError(#[from] decode_utility::DecodingError),
 }

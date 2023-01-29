@@ -60,6 +60,23 @@ macro_rules! gen_image_loader {
             let width = decoded_image.width;
             let height = decoded_image.height;
 
+            let color_matrix = utility::matrix3_mul(&data::XYZ2SRGB, &decoded_image.cam_matrix);
+            let white_balance = {
+                let [r, g, b] = decoded_image.white_balance;
+                [r as f32 / g as f32, 1f32, b as f32 / g as f32]
+            };
+
+            if image.len() == width * height * 3 {
+                return Ok(Image {
+                    data: image,
+                    orientation,
+                    width,
+                    height,
+                    white_balance,
+                    color_matrix,
+                })
+            }
+
             let iter = image.iter().copied();
             let data = pass::iters_to_vec!(
                 iter
@@ -74,12 +91,6 @@ macro_rules! gen_image_loader {
                     }
                     ..flatten()
             );
-
-            let color_matrix = utility::matrix3_mul(&data::XYZ2SRGB, &decoded_image.cam_matrix);
-            let white_balance = {
-                let [r, g, b] = decoded_image.white_balance;
-                [r as f32 / g as f32, 1f32, b as f32 / g as f32]
-            };
 
             Ok(Image {
                 data,

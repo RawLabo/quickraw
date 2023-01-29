@@ -53,21 +53,36 @@ pub(super) static BASIC_INFO_RULE : Lazy<quickexif::ParsingRule> = Lazy::new(|| 
         0x0110 {
             str + 0 / model
         }
+        0x828e? / cfa_pattern
         0xc612? / dng_version
         if dng_version ? {
             0xc614 {
                 str + 0 / make_model
             }
-            0xc622 {
-                r64 + 0 / c0
-                r64 + 1 / c1
-                r64 + 2 / c2
-                r64 + 3 / c3
-                r64 + 4 / c4
-                r64 + 5 / c5
-                r64 + 6 / c6
-                r64 + 7 / c7
-                r64 + 8 / c8
+            if cfa_pattern ? {
+                0xc622 { // for normal dng
+                    r64 + 0 / c0
+                    r64 + 1 / c1
+                    r64 + 2 / c2
+                    r64 + 3 / c3
+                    r64 + 4 / c4
+                    r64 + 5 / c5
+                    r64 + 6 / c6
+                    r64 + 7 / c7
+                    r64 + 8 / c8
+                }
+            } else {
+                0xc621 { // for Apple ProRaw
+                    r64 + 0 / c0
+                    r64 + 1 / c1
+                    r64 + 2 / c2
+                    r64 + 3 / c3
+                    r64 + 4 / c4
+                    r64 + 5 / c5
+                    r64 + 6 / c6
+                    r64 + 7 / c7
+                    r64 + 8 / c8
+                }
             }
         }
     })

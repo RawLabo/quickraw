@@ -48,6 +48,10 @@ pub fn load_image_from_buffer(
     let width = decoded_image.width;
     let height = decoded_image.height;
 
+    if image.len() == width * height * 3 {
+        return Ok((image, width, height));
+    }
+
     let iter = image.iter().copied();
     let data = pass::iters_to_vec! (
         iter
