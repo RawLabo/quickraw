@@ -1,5 +1,9 @@
 # Supported camera models
 
+## iPhone
+* iPhone Raw
+* iPhone ProRaw
+
 ## Nikon
 Some shooting modes are not yet supported
 * Z5
