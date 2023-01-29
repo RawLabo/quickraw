@@ -65,14 +65,15 @@ mod utility;
 
 mod pass;
 mod maker;
-mod capi;
 mod decode;
 pub use decode::decode_file;
 pub use decode::decode_buffer;
 
 #[cfg(feature = "wasm-bindgen")]
-mod wasm;
-
+mod lib_wasm;
+#[cfg(any(debug_assertions, not(feature = "wasm-bindgen")))]
+mod lib_c;
+#[cfg(any(debug_assertions, not(feature = "wasm-bindgen")))]
 pub mod export;
 
 const BIT_SHIFT: u32 = 13u32;
@@ -155,4 +156,3 @@ pub enum RawFileReadingError {
     #[error("This raw file model: '{0}' is not supported yet.")]
     ModelIsNotSupportedYet(String),
 }
-

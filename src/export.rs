@@ -1,7 +1,4 @@
-use crate::{
-    decode::{CFAPattern, Orientation},
-    utility::ArrayMulNum,
-};
+use crate::{decode::CFAPattern, utility::ArrayMulNum};
 
 use super::*;
 use pass::*;
@@ -73,13 +70,4 @@ pub fn load_image_from_buffer(
     );
 
     Ok((data, width, height))
-}
-
-pub fn load_exif(buffer: &[u8]) -> Result<quickexif::ParsedInfo, RawFileReadingError> {
-    decode::get_exif_info(buffer)
-}
-
-pub fn load_thumbnail(buffer: &[u8]) -> Result<(Vec<u8>, Orientation), RawFileReadingError> {
-    let (thumbnail, orientation) = decode::get_thumbnail(buffer)?;
-    Ok((thumbnail.to_vec(), orientation))
 }

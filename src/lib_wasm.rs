@@ -242,10 +242,10 @@ fn quick_image_load(
 
 #[wasm_bindgen]
 pub fn load_exif_with_thumbnail(buffer: Vec<u8>) -> Result<ExifWithThumbnail, JsError> {
-    let info = expand_err(export::load_exif(&buffer))?;
+    let info = expand_err(decode::get_exif_info(&buffer))?;
     let exif = info.stringify_all()?;
-    let (thumbnail, orientation) = match export::load_thumbnail(&buffer) {
-        Ok(x) => x,
+    let (thumbnail, orientation) = match decode::get_thumbnail(&buffer) {
+        Ok((data, orientation)) => (data.to_vec(), orientation),
         Err(_) => {
             use image::codecs::jpeg;
             use image::ColorType;

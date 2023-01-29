@@ -114,7 +114,7 @@ impl Free for BasicInfo {
 fn load_basicinfo(cpath: *mut c_char) -> Result<BasicInfo> {
     let path = str_from_cchar(cpath);
     let buffer = decode::get_buffer_from_file(path)?;
-    let exif = export::load_exif(&buffer)?;
+    let exif = decode::get_exif_info(&buffer)?;
     let s = exif.stringify_all()?;
     let thumbnail = RustVec::new_empty();
     Ok(BasicInfo::new(s, thumbnail, 0))
