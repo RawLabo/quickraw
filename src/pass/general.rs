@@ -9,6 +9,11 @@ pub fn u16rgb_to_u8rgb(iter: impl Iterator<Item = [u16; 3]>) -> impl Iterator<It
     iter.map(|[r, g, b]| [(r >> 8) as u8, (g >> 8) as u8, (b >> 8) as u8])
 }
 
+#[inline(always)]
+pub fn u16rgb_to_u16rgba(iter: impl Iterator<Item = [u16; 3]>) -> impl Iterator<Item = [u16; 4]> {
+    iter.map(|[r, g, b]| [r, g, b, u16::MAX])
+}
+
 
 // #[inline(always)]
 // pub fn sub_black_level(

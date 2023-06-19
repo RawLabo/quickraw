@@ -32,6 +32,21 @@ pub fn color_convert<'a>(
 }
 
 #[inline(always)]
+pub fn color_convert_rgba<'a>(
+    iter: impl Iterator<Item = [i32; 3]> + 'a,
+    c: &'a [i32; 9],
+) -> impl Iterator<Item = [u16; 4]> + 'a {
+    iter.map(move |[r, g, b]| {
+        [
+            limit_to_range((c[0] * r + c[1] * g + c[2] * b) >> BIT_SHIFT, CLIP_RANGE) as u16,
+            limit_to_range((c[3] * r + c[4] * g + c[5] * b) >> BIT_SHIFT, CLIP_RANGE) as u16,
+            limit_to_range((c[6] * r + c[7] * g + c[8] * b) >> BIT_SHIFT, CLIP_RANGE) as u16,
+            u16::MAX
+        ]
+    })
+}
+
+#[inline(always)]
 pub fn gamma_correct<'a>(
     iter: impl Iterator<Item = [u16; 3]> + 'a,
     gamma_lut: &'a [u16; 65536],
