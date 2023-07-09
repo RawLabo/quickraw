@@ -10,19 +10,12 @@ license = "LGPL-2.1"
 exclude = ["examples/"]
 
 [dependencies]
-fn-util = { version = "0.1" }
 thiserror = "1"
-anyhow = "1"
-once_cell = "1"
-phf = { version = "0.10", features = ["macros"] }
-quickexif = "0.1"
+phf = { version = "0.11", features = ["macros"] }
+quickexif = { path="../quickexif" }
 
-# only for wasm target
-wasm-bindgen = { version = "0.2", optional = true }
-image = { version = "0.24", default-features = false, features = ["jpeg"], optional = true }
-
-[features]
-wasm = ["wasm-bindgen", "image"]
+[dev-dependencies]
+env_logger = "0.10"
 
 [package.metadata.docs.rs]
 all-features = true
