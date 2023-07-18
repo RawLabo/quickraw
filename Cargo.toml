@@ -11,8 +11,8 @@ exclude = ["examples/"]
 
 [dependencies]
 thiserror = "1"
+erreport = "0.1"
 phf = { version = "0.11", features = ["macros"] }
-quickexif = { path="../quickexif" }
 
 [dev-dependencies]
 env_logger = "0.10"

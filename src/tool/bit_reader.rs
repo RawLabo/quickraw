@@ -1,19 +1,37 @@
-pub(crate) struct BitReader<'a, T: Iterator<Item = &'a u8>> {
-    source: T,
+use crate::{
+    report::{Report, ToReport},
+    Error,
+};
+
+struct BitReader<'a> {
+    source: &'a [u8],
+    position: usize,
     cache: u32,
     cached_bits: usize,
 }
-impl<'a, T: Iterator<Item = &'a u8>> BitReader<'a, T> {
-    fn read_bits_be(&mut self, bits: usize) -> u32 {
+
+impl<'a> BitReader<'a> {
+    pub(crate) fn new(source: &'a [u8]) -> Self {
+        BitReader {
+            source,
+            position: 0,
+            cache: 0,
+            cached_bits: 0,
+        }
+    }
+
+    /// bits must be less than 32
+    pub(crate) fn read_bits_be(&mut self, bits: usize) -> Result<u32, Report> {
         while self.cached_bits < bits {
-            match self.source.next() {
-                Some(byte) => {
-                    self.cache <<= 8;
-                    self.cache |= *byte as u32;
-                    self.cached_bits += 8;
-                }
-                None => panic!("bits:{bits} too much"),
-            }
+            let Some(byte) = self.source.get(self.position) else {
+                return Err(Error::IsNone).to_report()
+            };
+
+            self.cache <<= 8;
+            self.cache |= *byte as u32;
+            self.cached_bits += 8;
+
+            self.position += 1;
         }
 
         let preserved_bits = self.cached_bits - bits;
@@ -25,17 +43,20 @@ impl<'a, T: Iterator<Item = &'a u8>> BitReader<'a, T> {
 
         self.cache = preserved_cache;
         self.cached_bits = preserved_bits;
-        result
+        Ok(result)
     }
-    fn read_bits_le(&mut self, bits: usize) -> u32 {
+
+    /// bits must be less than 32
+    pub(crate) fn read_bits_le(&mut self, bits: usize) -> Result<u32, Report> {
         while self.cached_bits < bits {
-            match self.source.next() {
-                Some(byte) => {
-                    self.cache |= (*byte as u32) << self.cached_bits;
-                    self.cached_bits += 8;
-                }
-                None => panic!("bits:{bits} too much"),
-            }
+            let Some(byte) = self.source.get(self.position) else {
+                return Err(Error::IsNone).to_report()
+            };
+
+            self.cache |= (*byte as u32) << self.cached_bits;
+            self.cached_bits += 8;
+
+            self.position += 1;
         }
 
         let preserved_bits = self.cached_bits - bits;
@@ -46,13 +67,13 @@ impl<'a, T: Iterator<Item = &'a u8>> BitReader<'a, T> {
 
         self.cache = preserved_cache;
         self.cached_bits = preserved_bits;
-        result
+        Ok(result)
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::tool::bit_reader::BitReader;
+    use super::BitReader;
 
     enum Bits {
         U8(u8),
@@ -113,44 +134,64 @@ mod tests {
         }
     }
 
+    const DATA: [u8; 6] = [
+        0b10001101u8,
+        0b11010100,
+        0b10011001,
+        0b11110001,
+        0b00001011,
+        0b10011011,
+    ];
+
     #[test]
-    fn test_le() {
-        let data = vec![
-            0b10001101u8,
-            0b11010100,
-            0b10011001,
-            0b11110001,
-            0b00001011,
-            0b10011011,
-        ];
-
+    fn test_be() -> Result<(), Box<dyn std::error::Error>> {
         {
-            let mut reader = BitReader {
-                source: data.iter(),
-                cache: 0,
-                cached_bits: 0,
-            };
-            reader.read_bits_le(11);
-            let r0 = reader.read_bits_le(7);
+            let mut reader = BitReader::new(&DATA);
+            reader.read_bits_be(11)?;
+            let r0 = reader.read_bits_be(7)?;
 
-            let r1 = bit_read_le(&data, 11, 7);
+            let r1 = bit_read_be(&DATA, 11, 7);
 
             assert_eq!(r0, r1.as_u32());
         }
 
-        
         {
-            let mut reader = BitReader {
-                source: data.iter(),
-                cache: 0,
-                cached_bits: 0,
-            };
-            reader.read_bits_be(11);
-            let r0 = reader.read_bits_be(7);
+            let mut reader = BitReader::new(&DATA);
+            reader.read_bits_be(20)?;
+            reader.read_bits_be(20)?;
+            let r0 = reader.read_bits_be(7)?;
 
-            let r1 = bit_read_be(&data, 11, 7);
+            let r1 = bit_read_be(&DATA, 40, 7);
 
             assert_eq!(r0, r1.as_u32());
         }
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_le() -> Result<(), Box<dyn std::error::Error>> {
+        {
+            let mut reader = BitReader::new(&DATA);
+            reader.read_bits_le(11)?;
+            let r0 = reader.read_bits_le(7)?;
+
+            let r1 = bit_read_le(&DATA, 11, 7);
+
+            assert_eq!(r0, r1.as_u32());
+        }
+
+        {
+            let mut reader = BitReader::new(&DATA);
+            reader.read_bits_le(20)?;
+            reader.read_bits_le(20)?;
+            let r0 = reader.read_bits_le(7)?;
+
+            let r1 = bit_read_le(&DATA, 40, 7);
+
+            assert_eq!(r0, r1.as_u32());
+        }
+
+        Ok(())
     }
 }
