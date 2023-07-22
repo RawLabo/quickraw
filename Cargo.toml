@@ -13,6 +13,8 @@ exclude = ["examples/"]
 thiserror = "1"
 erreport = "0.1"
 phf = { version = "0.11", features = ["macros"] }
+quickexif = { version = "0.2.0-alpha.2" }
+bytemuck = "1.13"
 
 [dev-dependencies]
 env_logger = "0.10"
