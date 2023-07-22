@@ -42,25 +42,27 @@ mod arw_rule {
     );
 }
 
-pub(crate) struct ArwInfo {
-    make: Box<str>,
-    model: Box<str>,
-    width: usize,
-    height: usize,
-    orientation: u16,
-    black_level: u16,
-    white_balance: [u16; 3], // RGB
-    white_level: u16,
-    tone_curve: Vec<u16>,
-    image_addr: u64,
-    image_size: usize,
-    thumbnail_addr: u64,
-    thumbnail_size: usize,
+pub struct ArwInfo {
+    pub is_le: bool,
+    pub make: Box<str>,
+    pub model: Box<str>,
+    pub width: usize,
+    pub height: usize,
+    pub orientation: u16,
+    pub compression: u16,
+    pub black_level: u16,
+    pub white_balance: [u16; 3], // RGB
+    pub white_level: u16,
+    pub tone_curve: Vec<u16>,
+    pub image_addr: u64,
+    pub image_size: usize,
+    pub thumbnail_addr: u64,
+    pub thumbnail_size: usize,
 }
 
 pub(crate) fn parse_exif<T: Read + Seek>(mut reader: T) -> Result<ArwInfo, Report> {
     let buf_reader = BufReader::new(&mut reader);
-    let exif = quickexif::parse_exif(buf_reader, arw_rule::PATH_LST, Some((0, 1))).to_report()?;
+    let (exif, is_le) = quickexif::parse_exif(buf_reader, arw_rule::PATH_LST, Some((0, 1))).to_report()?;
     macro_rules! get {
         ($tag:tt => $fn:tt) => {
             exif.get(arw_rule::$tag)
@@ -80,6 +82,7 @@ pub(crate) fn parse_exif<T: Read + Seek>(mut reader: T) -> Result<ArwInfo, Repor
     let model = get!(model => str);
     let width = get!(width -> u16);
     let height = get!(height -> u16);
+    let compression = get!(compression -> u16);
     let orientation = get!(orientation -> u16);
     let black_level = get!(black_level => u16s);
     let white_balance = get!(white_balance => u16s);
@@ -95,8 +98,10 @@ pub(crate) fn parse_exif<T: Read + Seek>(mut reader: T) -> Result<ArwInfo, Repor
     let tone_curve = gen_tone_curve_sony(&tone_curve_points);
 
     Ok(ArwInfo {
+        is_le,
         make: make.into(),
         model: model.into(),
+        compression,
         black_level: black_level[0],
         white_balance: [white_balance[0], white_balance[1], white_balance[2]],
         white_level: white_level[0],
