@@ -16,6 +16,7 @@ use std::fs::File;
 erreport::gen_report_code!();
 use report::{Report, ToReport};
 
+pub(crate) mod color;
 pub mod data;
 pub(crate) mod decode;
 pub(crate) mod demosaicing;
@@ -41,12 +42,17 @@ pub fn extract_image(path: &str) -> Result<(Box<[u16]>, usize, usize), Report> {
         parse::get_bytes(&mut file_reader, info.strip_addr, info.strip_size).to_report()?;
     let image_bytes = decode::arw::decode_with_preprocess(&info, strip_bytes)?;
 
+    let gamma_lut = color::gen_gamma_lut(1f32 / 2.2);
+
     let w = info.width;
     let h = info.height;
     let image: Box<_> = image_bytes
         .iter()
         .enumerate()
-        .flat_map(|(i, v)| demosaicing::linear::rggb(i, w, h, *v, &image_bytes))
+        .flat_map(|(i, v)| {
+            let [r,g,b] = demosaicing::linear::rggb(i, w, h, *v, &image_bytes);
+            color::gamma_correct([r as u32, g as u32, b as u32], &gamma_lut)
+        })
         .collect();
 
     Ok((image, w, h))

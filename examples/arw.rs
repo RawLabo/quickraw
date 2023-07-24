@@ -8,5 +8,5 @@ fn main() {
     let image_beu8 : Vec<_> = image_u16.into_iter().flat_map(|v| v.to_be_bytes()).collect();
     let mut ppm_header = format!("P6 {w} {h} 65535\n").as_bytes().to_vec();
     ppm_header.extend(image_beu8);
-    fs::write("sample.ppm", ppm_header).unwrap();
+    // fs::write("sample.ppm", ppm_header).unwrap();
 }
