@@ -15,15 +15,6 @@ pub(crate) fn gamma_correct([r, g, b]: [usize; 3], gamma_lut: &[u16; 65536]) -> 
 }
 
 impl WhiteBalance {
-    // pub(crate) fn fix_simd(&self, [r, g, b]: [u16; 3]) -> [u32; 3] {
-    //     use wide::u32x4;
-    //     let a = u32x4::from([r as u32, g as u32, b as u32, 0]);
-    //     let b = u32x4::from([self.r, self.g, self.b, 0]);
-    //     let c: u32x4 = a * b >> self.bit_shift;
-    //     let d = c.min(u32x4::from([0xffff, 0xffff, 0xffff, 0]));
-    //     let result = d.as_array_ref();
-    //     [result[0], result[1], result[2]]
-    // }
     pub(crate) fn fix(&self, [r, g, b]: [u16; 3]) -> [u32; 3] {
         [
             std::cmp::min(r as u32 * self.r >> self.bit_shift, 0xffff),
