@@ -6,6 +6,8 @@ use crate::{
     Error,
 };
 
+use super::CFAPattern;
+
 mod arw_rule {
     #![allow(non_upper_case_globals)]
     use quickexif::gen_tags_info;
@@ -50,12 +52,13 @@ pub struct ArwInfo {
     pub height: usize,
     pub orientation: u16,
     pub compression: u16,
+    pub cfa_pattern: CFAPattern,
     pub black_level: u16,
     pub white_balance: [u16; 3], // RGB
     pub white_level: u16,
     pub tone_curve: Vec<u16>,
-    pub image_addr: u64,
-    pub image_size: usize,
+    pub strip_addr: u64,
+    pub strip_size: usize,
     pub thumbnail_addr: u64,
     pub thumbnail_size: usize,
 }
@@ -87,6 +90,7 @@ pub(crate) fn parse_exif<T: Read + Seek>(mut reader: T) -> Result<ArwInfo, Repor
     let black_level = get!(black_level => u16s);
     let white_balance = get!(white_balance => u16s);
     let white_level = get!(white_level => u16s);
+    let cfa_pattern = get!(cfa_pattern -> raw);
 
     let image_addr = get!(strip -> u32) as u64;
     let image_size = get!(strip_len -> u32) as usize;
@@ -105,12 +109,13 @@ pub(crate) fn parse_exif<T: Read + Seek>(mut reader: T) -> Result<ArwInfo, Repor
         black_level: black_level[0],
         white_balance: [white_balance[0], white_balance[1], white_balance[2]],
         white_level: white_level[0],
+        cfa_pattern: cfa_pattern.into(),
         tone_curve,
         width: width as usize,
         height: height as usize,
         orientation,
-        image_addr,
-        image_size,
+        strip_addr: image_addr,
+        strip_size: image_size,
         thumbnail_addr,
         thumbnail_size,
     })
