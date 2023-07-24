@@ -6,7 +6,7 @@ use crate::{
     Error,
 };
 
-use super::CFAPattern;
+use super::{CFAPattern, WhiteBalance};
 
 mod arw_rule {
     #![allow(non_upper_case_globals)]
@@ -54,7 +54,7 @@ pub struct ArwInfo {
     pub compression: u16,
     pub cfa_pattern: CFAPattern,
     pub black_level: u16,
-    pub white_balance: [u16; 3], // RGB
+    pub white_balance: WhiteBalance,
     pub white_level: u16,
     pub tone_curve: Vec<u16>,
     pub strip_addr: u64,
@@ -65,7 +65,8 @@ pub struct ArwInfo {
 
 pub(crate) fn parse_exif<T: Read + Seek>(mut reader: T) -> Result<ArwInfo, Report> {
     let buf_reader = BufReader::new(&mut reader);
-    let (exif, is_le) = quickexif::parse_exif(buf_reader, arw_rule::PATH_LST, Some((0, 1))).to_report()?;
+    let (exif, is_le) =
+        quickexif::parse_exif(buf_reader, arw_rule::PATH_LST, Some((0, 1))).to_report()?;
     macro_rules! get {
         ($tag:tt => $fn:tt) => {
             exif.get(arw_rule::$tag)
@@ -107,7 +108,7 @@ pub(crate) fn parse_exif<T: Read + Seek>(mut reader: T) -> Result<ArwInfo, Repor
         model: model.into(),
         compression,
         black_level: black_level[0],
-        white_balance: [white_balance[0], white_balance[1], white_balance[2]],
+        white_balance: [white_balance[0], white_balance[1], white_balance[3]].into(),
         white_level: white_level[0],
         cfa_pattern: cfa_pattern.into(),
         tone_curve,

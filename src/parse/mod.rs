@@ -1,6 +1,31 @@
 use crate::report::{Report, ToReport};
 use std::io::{Read, Seek, SeekFrom};
 
+pub struct WhiteBalance {
+    pub(crate) r: u32,
+    pub(crate) g: u32,
+    pub(crate) b: u32,
+    pub(crate) bit_shift: u32,
+}
+impl From<[u16; 3]> for WhiteBalance {
+    fn from([r, g, b]: [u16; 3]) -> Self {
+        let mut bit_shift = 0u32;
+        for i in 1u32.. {
+            if (g >> i) == 1 {
+                bit_shift = i;
+                break;
+            }
+        }
+
+        Self {
+            r: r as u32,
+            g: g as u32,
+            b: b as u32,
+            bit_shift,
+        }
+    }
+}
+
 pub enum CFAPattern {
     RGGB,
     GRBG,

@@ -50,8 +50,9 @@ pub fn extract_image(path: &str) -> Result<(Box<[u16]>, usize, usize), Report> {
         .iter()
         .enumerate()
         .flat_map(|(i, v)| {
-            let [r,g,b] = demosaicing::linear::rggb(i, w, h, *v, &image_bytes);
-            color::gamma_correct([r as u32, g as u32, b as u32], &gamma_lut)
+            let rgb = demosaicing::linear::rggb(i, w, h, *v, &image_bytes);
+            let [r, g, b] = info.white_balance.fix(rgb);
+            color::gamma_correct([r as usize, g as usize, b as usize], &gamma_lut)
         })
         .collect();
 
