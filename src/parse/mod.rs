@@ -34,12 +34,12 @@ impl From<&[f32; 9]> for ColorMatrix {
 }
 impl From<Box<[f64]>> for ColorMatrix {
     fn from(value: Box<[f64]>) -> Self {
-        let mut c = value.into_iter().map(|&x| x as f32).collect::<Vec<_>>();
+        let mut c = value.into_iter().map(|&x| x as f32).collect::<Box<_>>();
         matrix3_inverse(&mut c);
         matrix3_normalize(&mut c);
         let mut matrix = [0f32; 9];
         matrix.iter_mut().zip(c.into_iter()).for_each(|(dst, src)| {
-            *dst = src;
+            *dst = *src;
         });
         matrix.into()
     }
@@ -132,12 +132,12 @@ pub(crate) fn get_bytes<T: Read + Seek>(
     mut reader: T,
     addr: u64,
     size: usize,
-) -> Result<Vec<u8>, Report> {
+) -> Result<Box<[u8]>, Report> {
     let mut bytes = vec![0u8; size];
     reader.seek(SeekFrom::Start(addr)).to_report()?;
     reader.read_exact(&mut bytes).to_report()?;
 
-    Ok(bytes)
+    Ok(bytes.into_boxed_slice())
 }
 
 macro_rules! gen_get {

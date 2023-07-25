@@ -1,5 +1,5 @@
 /// generate tone curve in 12bits for Sony, the length of input curve ndoes should be 4
-pub(crate) fn gen_tone_curve_sony(points: &[u16]) -> Vec<u16> {
+pub(crate) fn gen_tone_curve_sony(points: &[u16]) -> Box<[u16]> {
     let points_12bits = [
         0usize,
         (points[0] >> 2) as usize,
@@ -23,14 +23,14 @@ pub(crate) fn gen_tone_curve_sony(points: &[u16]) -> Vec<u16> {
             }
         });
 
-    curve.to_vec()
+    Box::new(curve)
 }
 
 #[cfg(test)]
 mod tests {
     use super::gen_tone_curve_sony;
 
-    fn gen_curve_sample(points: &[u16]) -> Vec<u16> {
+    fn gen_curve_sample(points: &[u16]) -> Box<[u16]> {
         let mut curve: [usize; 6] = [0, 0, 0, 0, 0, 4095];
 
         for i in 0..4 {
@@ -44,7 +44,7 @@ mod tests {
             }
         }
 
-        table
+        table.into_boxed_slice()
     }
 
     #[test]

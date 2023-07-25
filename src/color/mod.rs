@@ -20,11 +20,13 @@ impl WhiteBalance {
     pub(crate) fn fix(&self, [r, g, b]: [u16; 3]) -> [i32; 3] {
         let rgb = i32x4::from([r as i32, g as i32, b as i32, 0]);
         let r1 = rgb * self.rgb >> self.bit_shift;
+
         #[cfg(target_feature="avx")]
         let r1 = r1.min(i32x4::splat(0xffff));
         #[cfg(target_feature="neon")]
         let r1 = r1.min(self.clamp);
-        let r2 = r1.to_array();
+
+        let r2 = r1.as_array_ref();
         [r2[0], r2[1], r2[2]]
     }
 }
@@ -46,7 +48,7 @@ impl ColorMatrix {
         #[cfg(target_feature="neon")]
         let r1 = r.min(self.clamp0).max(self.clamp1);
 
-        let r2 = r1.to_array();
+        let r2 = r1.as_array_ref();
         [r2[0] as usize, r2[1] as usize, r2[2] as usize]
     }
 

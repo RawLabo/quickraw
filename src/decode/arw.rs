@@ -16,8 +16,8 @@ impl super::Preprocess for ArwInfo {
 
 pub(crate) fn decode_with_preprocess(
     info: &ArwInfo,
-    strip_bytes: Vec<u8>,
-) -> Result<Vec<u16>, Report> {
+    strip_bytes: Box<[u8]>,
+) -> Result<Box<[u16]>, Report> {
     match info.compression {
         1 => {
             let image = general_16bit_iter(&strip_bytes, info.is_le)

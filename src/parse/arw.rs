@@ -56,14 +56,12 @@ pub struct ArwInfo {
     pub black_level: u16,
     pub white_balance: WhiteBalance,
     pub white_level: u16,
-    pub tone_curve: Vec<u16>,
+    pub tone_curve: Box<[u16]>,
     pub strip_addr: u64,
     pub strip_size: usize,
     pub thumbnail_addr: u64,
     pub thumbnail_size: usize,
 }
-
-
 
 pub(crate) fn parse_exif<T: Read + Seek>(mut reader: T) -> Result<ArwInfo, Report> {
     let buf_reader = BufReader::new(&mut reader);
