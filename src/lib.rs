@@ -14,6 +14,7 @@
 use std::fs::File;
 
 erreport::gen_report_code!();
+use parse::ColorMatrix;
 use report::{Report, ToReport};
 
 pub(crate) mod color;
@@ -43,6 +44,8 @@ pub fn extract_image(path: &str) -> Result<(Box<[u16]>, usize, usize), Report> {
     let image_bytes = decode::arw::decode_with_preprocess(&info, strip_bytes)?;
 
     let gamma_lut = color::gen_gamma_lut(1f32 / 2.2);
+    let mut color_matrix: ColorMatrix = data::CAM_XYZ_MAP.get("ILCE-7C").unwrap().into();
+    color_matrix.update_colorspace(&data::XYZ2SRGB);
 
     let w = info.width;
     let h = info.height;
@@ -51,8 +54,9 @@ pub fn extract_image(path: &str) -> Result<(Box<[u16]>, usize, usize), Report> {
         .enumerate()
         .flat_map(|(i, v)| {
             let rgb = demosaicing::linear::rggb(i, w, h, *v, &image_bytes);
-            let [r, g, b] = info.white_balance.fix(rgb);
-            color::gamma_correct([r as usize, g as usize, b as usize], &gamma_lut)
+            let rgb = info.white_balance.fix(rgb);
+            let rgb = color_matrix.shift_color(rgb);
+            color::gamma_correct(rgb, &gamma_lut)
         })
         .collect();
 

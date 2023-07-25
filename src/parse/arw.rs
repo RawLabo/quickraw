@@ -63,24 +63,14 @@ pub struct ArwInfo {
     pub thumbnail_size: usize,
 }
 
+
+
 pub(crate) fn parse_exif<T: Read + Seek>(mut reader: T) -> Result<ArwInfo, Report> {
     let buf_reader = BufReader::new(&mut reader);
     let (exif, is_le) =
         quickexif::parse_exif(buf_reader, arw_rule::PATH_LST, Some((0, 1))).to_report()?;
-    macro_rules! get {
-        ($tag:tt => $fn:tt) => {
-            exif.get(arw_rule::$tag)
-                .and_then(|x| x.$fn())
-                .ok_or(Error::IsNone)
-                .to_report()?
-        };
-        ($tag:tt -> $fn:tt) => {
-            exif.get(arw_rule::$tag)
-                .map(|x| x.$fn())
-                .ok_or(Error::IsNone)
-                .to_report()?
-        };
-    }
+
+    super::gen_get!(exif, arw_rule);
 
     let make = get!(make => str);
     let model = get!(model => str);

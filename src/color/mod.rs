@@ -1,4 +1,4 @@
-use crate::parse::WhiteBalance;
+use crate::parse::{ColorMatrix, WhiteBalance};
 
 pub(crate) fn gen_gamma_lut(gamma: f32) -> [u16; 65536] {
     let mut lut = [0u16; 65536];
@@ -15,11 +15,47 @@ pub(crate) fn gamma_correct([r, g, b]: [usize; 3], gamma_lut: &[u16; 65536]) -> 
 }
 
 impl WhiteBalance {
-    pub(crate) fn fix(&self, [r, g, b]: [u16; 3]) -> [u32; 3] {
+    #[inline(always)]
+    pub(crate) fn fix(&self, [r, g, b]: [u16; 3]) -> [i32; 3] {
         [
-            std::cmp::min(r as u32 * self.r >> self.bit_shift, 0xffff),
-            std::cmp::min(g as u32 * self.g >> self.bit_shift, 0xffff),
-            std::cmp::min(b as u32 * self.b >> self.bit_shift, 0xffff),
+            std::cmp::min(r as i32 * self.r >> self.bit_shift, 0xffff),
+            std::cmp::min(g as i32 * self.g >> self.bit_shift, 0xffff),
+            std::cmp::min(b as i32 * self.b >> self.bit_shift, 0xffff),
         ]
+    }
+}
+
+impl ColorMatrix {
+    const BIT_SCALE: i32 = 14;
+    const COLOR_MATRIX_SCALE: f32 = 16384f32;
+
+    #[inline(always)]
+    pub(crate) fn shift_color(&self, [r, g, b]: [i32; 3]) -> [usize; 3] {
+        let [c0, c1, c2, c3, c4, c5, c6, c7, c8] = self.matrix_with_colorspace;
+        [
+            ((r * c0 + g * c1 + b * c2) >> Self::BIT_SCALE).clamp(0, 0xffff) as usize,
+            ((r * c3 + g * c4 + b * c5) >> Self::BIT_SCALE).clamp(0, 0xffff) as usize,
+            ((r * c6 + g * c7 + b * c8) >> Self::BIT_SCALE).clamp(0, 0xffff) as usize,
+        ]
+    }
+
+    /// self.matrix_with_colorspace = color_space * self.matrix *
+    pub(crate) fn update_colorspace(&mut self, color_space: &[f32; 9]) {
+        let a = color_space;
+        let b = self.matrix;
+
+        let matrix = [
+            ((a[0] * b[0] + a[1] * b[3] + a[2] * b[6]) * Self::COLOR_MATRIX_SCALE) as i32,
+            ((a[0] * b[1] + a[1] * b[4] + a[2] * b[7]) * Self::COLOR_MATRIX_SCALE) as i32,
+            ((a[0] * b[2] + a[1] * b[5] + a[2] * b[8]) * Self::COLOR_MATRIX_SCALE) as i32,
+            ((a[3] * b[0] + a[4] * b[3] + a[5] * b[6]) * Self::COLOR_MATRIX_SCALE) as i32,
+            ((a[3] * b[1] + a[4] * b[4] + a[5] * b[7]) * Self::COLOR_MATRIX_SCALE) as i32,
+            ((a[3] * b[2] + a[4] * b[5] + a[5] * b[8]) * Self::COLOR_MATRIX_SCALE) as i32,
+            ((a[6] * b[0] + a[7] * b[3] + a[8] * b[6]) * Self::COLOR_MATRIX_SCALE) as i32,
+            ((a[6] * b[1] + a[7] * b[4] + a[8] * b[7]) * Self::COLOR_MATRIX_SCALE) as i32,
+            ((a[6] * b[2] + a[7] * b[5] + a[8] * b[8]) * Self::COLOR_MATRIX_SCALE) as i32,
+        ];
+
+        self.matrix_with_colorspace = matrix;
     }
 }

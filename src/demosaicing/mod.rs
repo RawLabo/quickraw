@@ -19,6 +19,7 @@ enum PixelType {
     Center3,
 }
 
+#[inline(always)]
 fn get_pixel_type(i: usize, w: usize, h: usize) -> PixelType {
     let x = i % w;
     let y = i / w;

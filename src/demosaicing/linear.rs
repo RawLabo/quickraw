@@ -1,5 +1,6 @@
 use super::*;
 
+#[inline(always)]
 pub(crate) fn rggb(i: usize, w: usize, h: usize, v: u16, image: &[u16]) -> [u16; 3] {
     match get_pixel_type(i, w, h) {
         PixelType::Center0 => {
