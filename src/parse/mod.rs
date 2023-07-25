@@ -10,17 +10,26 @@ pub struct ColorMatrix {
     pub(crate) column0: i32x4,
     pub(crate) column1: i32x4,
     pub(crate) column2: i32x4,
+    pub(crate) clamp0: i32x4,
+    pub(crate) clamp1: i32x4,
+}
+impl From<[f32; 9]> for ColorMatrix {
+    fn from(value: [f32; 9]) -> Self {
+        Self {
+            matrix: value,
+            column0: i32x4::ZERO,
+            column1: i32x4::ZERO,
+            column2: i32x4::ZERO,
+            clamp0: i32x4::splat(0xffff),
+            clamp1: i32x4::splat(0),
+        }
+    }
 }
 impl From<&[f32; 9]> for ColorMatrix {
     fn from(value: &[f32; 9]) -> Self {
         let mut matrix = [0f32; 9];
         matrix.copy_from_slice(value);
-        Self {
-            matrix,
-            column0: i32x4::ZERO,
-            column1: i32x4::ZERO,
-            column2: i32x4::ZERO,
-        }
+        matrix.into()
     }
 }
 impl From<Box<[f64]>> for ColorMatrix {
@@ -32,12 +41,7 @@ impl From<Box<[f64]>> for ColorMatrix {
         matrix.iter_mut().zip(c.into_iter()).for_each(|(dst, src)| {
             *dst = src;
         });
-        Self {
-            matrix,
-            column0: i32x4::ZERO,
-            column1: i32x4::ZERO,
-            column2: i32x4::ZERO,
-        }
+        matrix.into()
     }
 }
 
@@ -84,6 +88,7 @@ fn matrix3_inverse(x: &mut [f32]) {
 pub struct WhiteBalance {
     pub(crate) rgb: i32x4,
     pub(crate) bit_shift: i32,
+    pub(crate) clamp: i32x4,
 }
 impl From<[u16; 3]> for WhiteBalance {
     fn from([r, g, b]: [u16; 3]) -> Self {
@@ -98,6 +103,7 @@ impl From<[u16; 3]> for WhiteBalance {
         Self {
             rgb: i32x4::from([r as i32, g as i32, b as i32, 0]),
             bit_shift,
+            clamp: i32x4::splat(0xffff),
         }
     }
 }
