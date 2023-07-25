@@ -1,12 +1,15 @@
 use crate::report::{Report, ToReport};
 use std::io::{Read, Seek, SeekFrom};
+use wide::i32x4;
 
 pub(crate) mod arw;
 pub(crate) mod dcp;
 
 pub struct ColorMatrix {
     pub(crate) matrix: [f32; 9],
-    pub(crate) matrix_with_colorspace: [i32; 9],
+    pub(crate) column0: i32x4,
+    pub(crate) column1: i32x4,
+    pub(crate) column2: i32x4,
 }
 impl From<&[f32; 9]> for ColorMatrix {
     fn from(value: &[f32; 9]) -> Self {
@@ -14,7 +17,9 @@ impl From<&[f32; 9]> for ColorMatrix {
         matrix.copy_from_slice(value);
         Self {
             matrix,
-            matrix_with_colorspace: [1, 0, 0, 0, 1, 0, 0, 0, 1], // use identical matrix by default
+            column0: i32x4::ZERO,
+            column1: i32x4::ZERO,
+            column2: i32x4::ZERO,
         }
     }
 }
@@ -29,7 +34,9 @@ impl From<Box<[f64]>> for ColorMatrix {
         });
         Self {
             matrix,
-            matrix_with_colorspace: [1, 0, 0, 0, 1, 0, 0, 0, 1],
+            column0: i32x4::ZERO,
+            column1: i32x4::ZERO,
+            column2: i32x4::ZERO,
         }
     }
 }
@@ -75,9 +82,7 @@ fn matrix3_inverse(x: &mut [f32]) {
 }
 
 pub struct WhiteBalance {
-    pub(crate) r: i32,
-    pub(crate) g: i32,
-    pub(crate) b: i32,
+    pub(crate) rgb: i32x4,
     pub(crate) bit_shift: i32,
 }
 impl From<[u16; 3]> for WhiteBalance {
@@ -91,9 +96,7 @@ impl From<[u16; 3]> for WhiteBalance {
         }
 
         Self {
-            r: r as i32,
-            g: g as i32,
-            b: b as i32,
+            rgb: i32x4::from([r as i32, g as i32, b as i32, 0]),
             bit_shift,
         }
     }
@@ -135,13 +138,15 @@ macro_rules! gen_get {
     ($exif:expr, $rule:tt) => {
         macro_rules! get {
             ($tag:tt => $fn:tt) => {
-                $exif.get($rule::$tag)
+                $exif
+                    .get($rule::$tag)
                     .and_then(|x| x.$fn())
                     .ok_or(Error::IsNone)
                     .to_report()?
             };
             ($tag:tt -> $fn:tt) => {
-                $exif.get($rule::$tag)
+                $exif
+                    .get($rule::$tag)
                     .map(|x| x.$fn())
                     .ok_or(Error::IsNone)
                     .to_report()?

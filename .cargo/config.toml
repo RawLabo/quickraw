@@ -1,0 +1,11 @@
+[x86_64-unknown-linux-gnu]
+rustflags = "-C target-feature=+crt-static -C target-cpu=sandybridge"
+
+[target.x86_64-pc-windows-msvc]
+rustflags = "-C target-feature=+crt-static -C target-cpu=sandybridge"
+
+[target.x86_64-apple-darwin]
+rustflags = "-C target-feature=+crt-static -C target-cpu=sandybridge -C link-arg=-mmacosx-version-min=10.12"
+
+[target.aarch64-apple-darwin]
+rustflags = "-C target-feature=+crt-static,+neon -C link-arg=-mmacosx-version-min=11.0"
