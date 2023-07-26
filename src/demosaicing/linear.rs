@@ -1,31 +1,50 @@
 use super::*;
 
 #[inline(always)]
-pub(crate) fn rggb(i: usize, w: usize, h: usize, v: u16, image: &[u16]) -> [u16; 3] {
+pub(crate) fn rggb(i: usize, w: usize, h: usize, image: &[u16]) -> [u16; 3] {
+    let v = image.fast_get(i);
+    
     match get_pixel_type(i, w, h) {
-        PixelType::TopLeft | PixelType::TopEven => [v, image[i + 1], image[i + w + 1]],
-        PixelType::TopRight | PixelType::TopOdd => [image[i - 1], v, image[i + w]],
-        PixelType::BottomLeft | PixelType::BottomEven => [image[i - w], v, image[i + 1]],
-        PixelType::BottomRight | PixelType::BottomOdd => [image[i - w - 1], image[i - 1], v],
-        PixelType::LeftEven => [v, image[i + 1], image[i + w + 1]],
-        PixelType::LeftOdd => [image[i + w], v, image[i + 1]],
-        PixelType::RightEven => [image[i - 1], v, image[i + w]],
-        PixelType::RightOdd => [image[i + w - 1], image[i - 1], v],
-        PixelType::Center0 => {
+        // center
+        [false, false, false, false, true, true] => {
             let (a, b) = avg_corner_4(image, i, w);
             [v, b, a]
         }
-        PixelType::Center1 => {
+        [false, false, false, false, false, true] => {
             let (a, b) = avg_tb_lr(image, i, w);
             [b, v, a]
         }
-        PixelType::Center2 => {
+        [false, false, false, false, true, false] => {
             let (a, b) = avg_tb_lr(image, i, w);
             [a, v, b]
         }
-        PixelType::Center3 => {
+        [false, false, false, false, false, false] => {
             let (a, b) = avg_corner_4(image, i, w);
             [a, b, v]
         }
+        // top left | top even
+        [true, _, true, _, _, _] | [true, _, _, _, true, _] => {
+            [v, image.fast_get(i + 1), image.fast_get(i + w + 1)]
+        }
+        // top right | top odd
+        [true, _, _, true, _, _] | [true, _, _, _, false, _] => {
+            [image.fast_get(i - 1), v, image.fast_get(i + w)]
+        }
+        // bottom left | bottom even
+        [_, true, true, _, _, _] | [_, true, _, _, true, _] => {
+            [image.fast_get(i - w), v, image.fast_get(i + 1)]
+        }
+        // bottom right | bottom odd
+        [_, true, _, true, _, _] | [_, true, _, _, false, _] => {
+            [image.fast_get(i - w - 1), image.fast_get(i - 1), v]
+        }
+        // left even
+        [_, _, true, _, _, true] => [v, image.fast_get(i + 1), image.fast_get(i + w + 1)],
+        // left odd
+        [_, _, true, _, _, false] => [image.fast_get(i + w), v, image.fast_get(i + 1)],
+        // right even
+        [_, _, _, true, _, true] => [image.fast_get(i - 1), v, image.fast_get(i + w)],
+        // right odd
+        [_, _, _, true, _, false] => [image.fast_get(i + w - 1), image.fast_get(i - 1), v],
     }
 }

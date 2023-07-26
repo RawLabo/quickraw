@@ -49,16 +49,15 @@ pub fn extract_image(path: &str) -> Result<(Box<[u16]>, usize, usize), Report> {
 
     let w = info.width;
     let h = info.height;
-    let image: Box<_> = image_bytes
-        .iter()
-        .enumerate()
-        .flat_map(|(i, v)| {
-            let rgb = demosaicing::linear::rggb(i, w, h, *v, &image_bytes);
-            let rgb = info.white_balance.fix(rgb);
-            let rgb = color_matrix.shift_color(rgb);
-            color::gamma_correct(rgb, &gamma_lut)
-        })
-        .collect();
+    let mut image = vec![0u16; image_bytes.len() * 3];
 
-    Ok((image, w, h))
+    image.chunks_exact_mut(3).enumerate().for_each(|(i, v)| {
+        let rgb = demosaicing::linear::rggb(i, w, h, &image_bytes);
+        let rgb = info.white_balance.fix(rgb);
+        let rgb = color_matrix.shift_color(&rgb);
+        let rgb = color::gamma_correct(rgb, &gamma_lut);
+        v.copy_from_slice(&rgb);
+    });
+
+    Ok((image.into_boxed_slice(), w, h))
 }

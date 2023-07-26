@@ -26,6 +26,7 @@ rustdoc-args = ["--cfg", "docsrs"]
 [profile.release]
 codegen-units = 1
 lto = "fat"
+debug = 1
 
 [lib]
 crate-type = ["lib", "staticlib", "cdylib"]

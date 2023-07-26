@@ -11,8 +11,8 @@ pub(crate) fn gen_gamma_lut(gamma: f32) -> [u16; 65536] {
 }
 
 #[inline(always)]
-pub(crate) fn gamma_correct([r, g, b]: [usize; 3], gamma_lut: &[u16; 65536]) -> [u16; 3] {
-    [gamma_lut[r], gamma_lut[g], gamma_lut[b]]
+pub(crate) fn gamma_correct([r, g, b]: [u16; 3], gamma_lut: &[u16; 65536]) -> [u16; 3] {
+    [gamma_lut[r as usize], gamma_lut[g as usize], gamma_lut[b as usize]]
 }
 
 impl WhiteBalance {
@@ -36,7 +36,7 @@ impl ColorMatrix {
     const COLOR_MATRIX_SCALE: f32 = 16384f32;
 
     #[inline(always)]
-    pub(crate) fn shift_color(&self, [r, g, b]: [i32; 3]) -> [usize; 3] {
+    pub(crate) fn shift_color(&self, &[r, g, b]: &[i32; 3]) -> [u16; 3] {
         let r = i32x4::splat(r);
         let g = i32x4::splat(g);
         let b = i32x4::splat(b);
@@ -49,7 +49,7 @@ impl ColorMatrix {
         let r1 = r.min(self.clamp0).max(self.clamp1);
 
         let r2 = r1.as_array_ref();
-        [r2[0] as usize, r2[1] as usize, r2[2] as usize]
+        [r2[0] as u16, r2[1] as u16, r2[2] as u16]
     }
 
     /// self.matrix_with_colorspace = color_space * self.matrix *
