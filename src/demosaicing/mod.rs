@@ -19,7 +19,6 @@ enum PixelType {
     Center3,
 }
 
-#[inline(always)]
 fn get_pixel_type(i: usize, w: usize, h: usize) -> PixelType {
     let x = i % w;
     let y = i / w;
@@ -54,7 +53,7 @@ fn get_pixel_type(i: usize, w: usize, h: usize) -> PixelType {
         (_, true, _, _, false, _) => PixelType::BottomOdd,
         // left edge
         (_, _, true, _, _, true) => PixelType::LeftEven,
-        (_, _, true, _, _, false) => PixelType::LeftEven,
+        (_, _, true, _, _, false) => PixelType::LeftOdd,
         // right edge
         (_, _, _, true, _, true) => PixelType::RightEven,
         (_, _, _, true, _, false) => PixelType::RightOdd,
