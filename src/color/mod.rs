@@ -21,9 +21,9 @@ impl WhiteBalance {
         let rgb = i32x4::from([r as i32, g as i32, b as i32, 0]);
         let r1 = rgb * self.rgb >> self.bit_shift;
 
-        #[cfg(target_feature="avx")]
+        #[cfg(target_feature="avx")] // x64 can benefit from the direct construction of i32x4 value for clamping
         let r1 = r1.min(i32x4::splat(0xffff));
-        #[cfg(target_feature="neon")]
+        #[cfg(not(target_feature="avx"))]
         let r1 = r1.min(self.clamp);
 
         let r2 = r1.as_array_ref();
@@ -45,7 +45,7 @@ impl ColorMatrix {
 
         #[cfg(target_feature="avx")]
         let r1 = r.min(i32x4::splat(0xffff)).max(i32x4::splat(0));
-        #[cfg(target_feature="neon")]
+        #[cfg(not(target_feature="avx"))]
         let r1 = r.min(self.clamp0).max(self.clamp1);
 
         let r2 = r1.as_array_ref();
