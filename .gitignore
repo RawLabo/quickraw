@@ -17,3 +17,5 @@ Cargo.lock
 /pkg/
 
 samples/
+
+profile.json
