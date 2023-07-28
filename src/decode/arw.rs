@@ -14,6 +14,7 @@ impl super::Preprocess for ArwInfo {
     }
 }
 
+
 pub(crate) fn decode_with_preprocess(
     info: &ArwInfo,
     strip_bytes: Box<[u8]>,

@@ -1,6 +1,7 @@
+use crate::parse::CFAPattern;
+
 pub(crate) mod linear;
 
-#[inline(always)]
 fn get_pixel_type(i: usize, w: usize, h: usize) -> [bool; 6] {
     let x = i % w;
     let y = i / w;
@@ -11,7 +12,14 @@ fn get_pixel_type(i: usize, w: usize, h: usize) -> [bool; 6] {
     let is_column_even = x % 2 == 0;
     let is_row_even = y % 2 == 0;
 
-    [is_top, is_bottom, is_left, is_right, is_column_even, is_row_even]
+    [
+        is_top,
+        is_bottom,
+        is_left,
+        is_right,
+        is_column_even,
+        is_row_even,
+    ]
 }
 
 trait FastGet {
@@ -19,11 +27,11 @@ trait FastGet {
 }
 impl FastGet for &[u16] {
     fn fast_get(&self, i: usize) -> u16 {
-        unsafe { *self.get_unchecked(i) }
+        self[i]
+        // unsafe { *self.get_unchecked(i) }
     }
 }
 
-#[inline(always)]
 fn avg_tb_lr(image: &[u16], i: usize, w: usize) -> (u16, u16) {
     let a = image.fast_get(i - w) as u32;
     let b = image.fast_get(i + w) as u32;
@@ -35,7 +43,6 @@ fn avg_tb_lr(image: &[u16], i: usize, w: usize) -> (u16, u16) {
     (x as u16, y as u16)
 }
 
-#[inline(always)]
 fn avg_corner_4(image: &[u16], i: usize, w: usize) -> (u16, u16) {
     let top: usize = i - w;
     let bottom: usize = i + w;
@@ -53,4 +60,17 @@ fn avg_corner_4(image: &[u16], i: usize, w: usize) -> (u16, u16) {
     let x = (a + b + c + d) / 4;
     let y = (e + f + g + h) / 4;
     (x as u16, y as u16)
+}
+
+impl CFAPattern {
+    pub(crate) fn linear_method(&self) -> fn(i: usize, w: usize, h: usize, image: &[u16]) -> [u16; 3] {
+        match self {
+            CFAPattern::RGGB => linear::rggb,
+            CFAPattern::BGGR => linear::bggr,
+            CFAPattern::GBRG => linear::gbrg,
+            CFAPattern::GRBG => linear::grbg,
+            CFAPattern::XTrans0 => linear::xtrans0,
+            CFAPattern::XTrans1 => linear::xtrans1,
+        }
+    }
 }

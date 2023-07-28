@@ -1,9 +1,24 @@
 use super::*;
 
-#[inline(always)]
+pub(crate) fn grbg(i: usize, w: usize, h: usize, image: &[u16]) -> [u16; 3] {
+    todo!()
+}
+pub(crate) fn gbrg(i: usize, w: usize, h: usize, image: &[u16]) -> [u16; 3] {
+    todo!()
+}
+pub(crate) fn bggr(i: usize, w: usize, h: usize, image: &[u16]) -> [u16; 3] {
+    todo!()
+}
+pub(crate) fn xtrans0(i: usize, w: usize, h: usize, image: &[u16]) -> [u16; 3] {
+    todo!()
+}
+pub(crate) fn xtrans1(i: usize, w: usize, h: usize, image: &[u16]) -> [u16; 3] {
+    todo!()
+}
+
 pub(crate) fn rggb(i: usize, w: usize, h: usize, image: &[u16]) -> [u16; 3] {
     let v = image.fast_get(i);
-    
+
     match get_pixel_type(i, w, h) {
         // center
         [false, false, false, false, true, true] => {

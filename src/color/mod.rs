@@ -1,6 +1,9 @@
 use crate::parse::{ColorMatrix, WhiteBalance};
 use wide::i32x4;
 
+pub mod data;
+
+
 pub(crate) fn gen_gamma_lut(gamma: f32) -> [u16; 65536] {
     let mut lut = [0u16; 65536];
     for (i, elem) in lut.iter_mut().enumerate() {
@@ -10,13 +13,13 @@ pub(crate) fn gen_gamma_lut(gamma: f32) -> [u16; 65536] {
     lut
 }
 
-#[inline(always)]
+
 pub(crate) fn gamma_correct([r, g, b]: [u16; 3], gamma_lut: &[u16; 65536]) -> [u16; 3] {
     [gamma_lut[r as usize], gamma_lut[g as usize], gamma_lut[b as usize]]
 }
 
 impl WhiteBalance {
-    #[inline(always)]
+    
     pub(crate) fn fix(&self, [r, g, b]: [u16; 3]) -> [i32; 3] {
         let rgb = i32x4::from([r as i32, g as i32, b as i32, 0]);
         let r1 = rgb * self.rgb >> self.bit_shift;
@@ -35,7 +38,7 @@ impl ColorMatrix {
     const BIT_SCALE: i32 = 14;
     const COLOR_MATRIX_SCALE: f32 = 16384f32;
 
-    #[inline(always)]
+    
     pub(crate) fn shift_color(&self, &[r, g, b]: &[i32; 3]) -> [u16; 3] {
         let r = i32x4::splat(r);
         let g = i32x4::splat(g);
@@ -53,7 +56,8 @@ impl ColorMatrix {
     }
 
     /// self.matrix_with_colorspace = color_space * self.matrix *
-    pub(crate) fn update_colorspace(&mut self, color_space: &[f32; 9]) {
+
+pub(crate) fn update_colorspace(&mut self, color_space: &[f32; 9]) {
         let a = color_space;
         let b = self.matrix;
 

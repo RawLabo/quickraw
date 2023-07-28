@@ -6,7 +6,7 @@ use crate::{
     Error,
 };
 
-use super::{CFAPattern, WhiteBalance};
+use super::{CFAPattern, DecodingInfo, WhiteBalance};
 
 mod arw_rule {
     #![allow(non_upper_case_globals)]
@@ -46,8 +46,6 @@ mod arw_rule {
 
 pub struct ArwInfo {
     pub is_le: bool,
-    pub make: Box<str>,
-    pub model: Box<str>,
     pub width: usize,
     pub height: usize,
     pub orientation: u16,
@@ -62,6 +60,17 @@ pub struct ArwInfo {
     pub thumbnail_addr: u64,
     pub thumbnail_size: usize,
 }
+impl From<ArwInfo> for DecodingInfo {
+    fn from(value: ArwInfo) -> Self {
+        DecodingInfo {
+            width: value.width,
+            height: value.height,
+            white_balance: value.white_balance,
+            cfa_pattern: value.cfa_pattern
+        }
+    }
+}
+
 
 pub(crate) fn parse_exif<T: Read + Seek>(mut reader: T) -> Result<ArwInfo, Report> {
     let buf_reader = BufReader::new(&mut reader);
@@ -70,8 +79,6 @@ pub(crate) fn parse_exif<T: Read + Seek>(mut reader: T) -> Result<ArwInfo, Repor
 
     super::gen_get!(exif, arw_rule);
 
-    let make = get!(make => str);
-    let model = get!(model => str);
     let width = get!(width -> u16);
     let height = get!(height -> u16);
     let compression = get!(compression -> u16);
@@ -92,8 +99,6 @@ pub(crate) fn parse_exif<T: Read + Seek>(mut reader: T) -> Result<ArwInfo, Repor
 
     Ok(ArwInfo {
         is_le,
-        make: make.into(),
-        model: model.into(),
         compression,
         black_level: black_level[0],
         white_balance: [white_balance[0], white_balance[1], white_balance[3]].into(),
