@@ -1,5 +1,23 @@
 pub(crate) mod linear;
 
+pub(crate) enum PixelType {
+    TopLeft,
+    TopEven,
+    TopOdd,
+    TopRight,
+    LeftEven,
+    LeftOdd,
+    RightEven,
+    RightOdd,
+    BottomLeft,
+    BottomEven,
+    BottomOdd,
+    BottomRight,
+    Center0,
+    Center1,
+    Center2,
+    Center3,
+}
 pub(crate) struct PixelInfo {
     w: usize,
     h: usize,
@@ -21,20 +39,37 @@ impl PixelInfo {
     }
 
     #[inline(always)]
-    pub(crate) fn get_stat_and_update(&mut self) -> [bool; 6] {
+    pub(crate) fn get_stat_and_update(&mut self) -> PixelType {
         let is_top = self.y == 0;
         let is_bottom = self.y == self.h - 1;
         let is_left = self.x == 0;
         let is_right = self.x == self.w - 1;
 
-        let ret = [
+        let ret = match [
             is_top,
             is_bottom,
             is_left,
             is_right,
             self.is_column_even,
             self.is_row_even,
-        ];
+        ] {
+            [false, false, false, false, true, true] => PixelType::Center0,
+            [false, false, false, false, false, true] => PixelType::Center1,
+            [false, false, false, false, true, false] => PixelType::Center2,
+            [false, false, false, false, false, false] => PixelType::Center3,
+            [true, _, true, _, _, _] => PixelType::TopLeft,
+            [true, _, _, _, true, _] => PixelType::TopEven,
+            [true, _, _, true, _, _] => PixelType::TopRight,
+            [true, _, _, _, false, _] => PixelType::TopOdd,
+            [_, true, true, _, _, _] => PixelType::BottomLeft,
+            [_, true, _, _, true, _] => PixelType::BottomEven,
+            [_, true, _, true, _, _] => PixelType::BottomRight,
+            [_, true, _, _, false, _] => PixelType::BottomOdd,
+            [_, _, true, _, _, true] => PixelType::LeftEven,
+            [_, _, true, _, _, false] => PixelType::LeftOdd,
+            [_, _, _, true, _, true] => PixelType::RightEven,
+            [_, _, _, true, _, false] => PixelType::RightOdd,
+        };
 
         // update for next pixel
         if is_right {
@@ -48,27 +83,6 @@ impl PixelInfo {
 
         ret
     }
-}
-
-#[inline(always)]
-fn get_pixel_type(i: usize, w: usize, h: usize) -> [bool; 6] {
-    let x = i % w;
-    let y = i / w;
-    let is_top = y == 0;
-    let is_bottom = y == h - 1;
-    let is_left = x == 0;
-    let is_right = x == w - 1;
-    let is_column_even = x % 2 == 0;
-    let is_row_even = y % 2 == 0;
-
-    [
-        is_top,
-        is_bottom,
-        is_left,
-        is_right,
-        is_column_even,
-        is_row_even,
-    ]
 }
 
 trait FastGet {

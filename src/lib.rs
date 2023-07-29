@@ -86,7 +86,7 @@ pub fn extract_image(
         ($method:expr) => {
             for (i, v) in image.chunks_exact_mut(3).enumerate() {
                 let stat = pixel_info.get_stat_and_update();
-                let rgb = $method(i, w, &stat, &image_bytes);
+                let rgb = $method(i, w, stat, &image_bytes);
                 let rgb = info.white_balance.fix(rgb);
                 let rgb = color_matrix.shift_color(&rgb);
                 let rgb = color::gamma_correct(rgb, &gamma_lut);
