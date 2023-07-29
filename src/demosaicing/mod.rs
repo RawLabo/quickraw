@@ -1,5 +1,55 @@
 pub(crate) mod linear;
 
+pub(crate) struct PixelInfo {
+    w: usize,
+    h: usize,
+    x: usize,
+    y: usize,
+    is_column_even: bool,
+    is_row_even: bool,
+}
+impl PixelInfo {
+    pub(crate) fn new(w: usize, h: usize) -> PixelInfo {
+        Self {
+            w,
+            h,
+            x: 0,
+            y: 0,
+            is_column_even: true,
+            is_row_even: true,
+        }
+    }
+
+    #[inline(always)]
+    pub(crate) fn get_stat_and_update(&mut self) -> [bool; 6] {
+        let is_top = self.y == 0;
+        let is_bottom = self.y == self.h - 1;
+        let is_left = self.x == 0;
+        let is_right = self.x == self.w - 1;
+
+        let ret = [
+            is_top,
+            is_bottom,
+            is_left,
+            is_right,
+            self.is_column_even,
+            self.is_row_even,
+        ];
+
+        // update for next pixel
+        if is_right {
+            self.x = 0;
+            self.y += 1;
+            self.is_row_even = !self.is_row_even;
+        } else {
+            self.x += 1;
+        }
+        self.is_column_even = !self.is_column_even;
+
+        ret
+    }
+}
+
 #[inline(always)]
 fn get_pixel_type(i: usize, w: usize, h: usize) -> [bool; 6] {
     let x = i % w;

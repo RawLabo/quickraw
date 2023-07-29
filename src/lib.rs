@@ -28,6 +28,8 @@ pub(crate) mod tool;
 
 pub use color::data as color_data;
 
+use crate::demosaicing::*;
+
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
     #[error("This raw file is unsupported")]
@@ -78,11 +80,13 @@ pub fn extract_image(
     }
 
     let mut image = vec![0u16; image_bytes.len() * 3];
+    let mut pixel_info = PixelInfo::new(w, h);
 
     macro_rules! gen_cfa_processing_branch {
         ($method:expr) => {
             for (i, v) in image.chunks_exact_mut(3).enumerate() {
-                let rgb = $method(i, w, h, &image_bytes);
+                let stat = pixel_info.get_stat_and_update();
+                let rgb = $method(i, w, &stat, &image_bytes);
                 let rgb = info.white_balance.fix(rgb);
                 let rgb = color_matrix.shift_color(&rgb);
                 let rgb = color::gamma_correct(rgb, &gamma_lut);

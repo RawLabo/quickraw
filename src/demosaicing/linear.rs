@@ -17,10 +17,10 @@ pub(crate) fn xtrans1(_i: usize, _w: usize, _h: usize, _image: &[u16]) -> [u16; 
 }
 
 #[inline(always)]
-pub(crate) fn rggb(i: usize, w: usize, h: usize, image: &[u16]) -> [u16; 3] {
+pub(crate) fn rggb(i: usize, w: usize, stat: &[bool; 6], image: &[u16]) -> [u16; 3] {
     let v = image.fast_get(i);
 
-    match get_pixel_type(i, w, h) {
+    match stat {
         // center
         [false, false, false, false, true, true] => {
             let (a, b) = avg_corner_4(image, i, w);
@@ -39,13 +39,21 @@ pub(crate) fn rggb(i: usize, w: usize, h: usize, image: &[u16]) -> [u16; 3] {
             [a, b, v]
         }
         // top left | top even
-        [true, _, true, _, _, _] | [true, _, _, _, true, _] => [v, image.fast_get(i + 1), image.fast_get(i + w + 1)],
+        [true, _, true, _, _, _] | [true, _, _, _, true, _] => {
+            [v, image.fast_get(i + 1), image.fast_get(i + w + 1)]
+        }
         // top right | top odd
-        [true, _, _, true, _, _] | [true, _, _, _, false, _] => [image.fast_get(i - 1), v, image.fast_get(i + w)],
+        [true, _, _, true, _, _] | [true, _, _, _, false, _] => {
+            [image.fast_get(i - 1), v, image.fast_get(i + w)]
+        }
         // bottom left | bottom even
-        [_, true, true, _, _, _] | [_, true, _, _, true, _] => [image.fast_get(i - w), v, image.fast_get(i + 1)],
+        [_, true, true, _, _, _] | [_, true, _, _, true, _] => {
+            [image.fast_get(i - w), v, image.fast_get(i + 1)]
+        }
         // bottom right | bottom odd
-        [_, true, _, true, _, _] | [_, true, _, _, false, _] => [image.fast_get(i - w - 1), image.fast_get(i - 1), v],
+        [_, true, _, true, _, _] | [_, true, _, _, false, _] => {
+            [image.fast_get(i - w - 1), image.fast_get(i - 1), v]
+        }
         // left even
         [_, _, true, _, _, true] => [v, image.fast_get(i + 1), image.fast_get(i + w + 1)],
         // left odd
