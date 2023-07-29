@@ -68,7 +68,7 @@ pub fn extract_image(
         .ok_or(Error::IsNone)
         .to_report()?
         .into();
-    color_matrix.update_colorspace(&color_space);
+    color_matrix.update_colorspace(color_space);
 
     let w = info.width;
     let h = info.height;
@@ -91,7 +91,7 @@ pub fn extract_image(
         };
     }
     match info.cfa_pattern {
-        parse::CFAPattern::RGGB => {
+        parse::CFAPattern::Rggb => {
             gen_cfa_processing_branch!(demosaicing::linear::rggb)
         }
         _ => {}

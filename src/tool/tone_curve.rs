@@ -16,9 +16,9 @@ pub(crate) fn gen_tone_curve_sony(points: &[u16]) -> Box<[u16]> {
         .enumerate()
         .for_each(|(seg, pair)| {
             let inc = 1 << seg;
-            for index in pair[0] + 1..=pair[1] {
+            for item in curve.iter_mut().take(pair[1] + 1).skip(pair[0] + 1) {
                 let v = last + inc;
-                curve[index] = v;
+                *item = v;
                 last = v;
             }
         });

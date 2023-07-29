@@ -42,11 +42,11 @@ impl From<&[f32; 9]> for ColorMatrix {
 }
 impl From<Box<[f64]>> for ColorMatrix {
     fn from(value: Box<[f64]>) -> Self {
-        let mut c = value.into_iter().map(|&x| x as f32).collect::<Box<_>>();
+        let mut c = value.iter().map(|&x| x as f32).collect::<Box<_>>();
         matrix3_inverse(&mut c);
         matrix3_normalize(&mut c);
         let mut matrix = [0f32; 9];
-        matrix.iter_mut().zip(c.into_iter()).for_each(|(dst, src)| {
+        matrix.iter_mut().zip(c.iter()).for_each(|(dst, src)| {
             *dst = *src;
         });
         matrix.into()
@@ -117,21 +117,21 @@ impl From<[u16; 3]> for WhiteBalance {
 }
 
 pub enum CFAPattern {
-    RGGB,
-    GRBG,
-    GBRG,
-    BGGR,
+    Rggb,
+    Grbg,
+    Gbrg,
+    Bggr,
     XTrans0, // RBGBRG
     XTrans1, // GGRGGB
 }
 impl<'a> From<&'a [u8]> for CFAPattern {
     fn from(value: &'a [u8]) -> Self {
         match value {
-            [0, 1, 1, 2] => CFAPattern::RGGB,
-            [2, 1, 1, 0] => CFAPattern::BGGR,
-            [1, 0, 2, 1] => CFAPattern::GRBG,
-            [1, 2, 0, 1] => CFAPattern::GBRG,
-            _ => CFAPattern::RGGB,
+            [0, 1, 1, 2] => CFAPattern::Rggb,
+            [2, 1, 1, 0] => CFAPattern::Bggr,
+            [1, 0, 2, 1] => CFAPattern::Grbg,
+            [1, 2, 0, 1] => CFAPattern::Gbrg,
+            _ => CFAPattern::Rggb,
         }
     }
 }

@@ -25,7 +25,7 @@ impl WhiteBalance {
     #[inline(always)]
     pub(crate) fn fix(&self, [r, g, b]: [u16; 3]) -> [i32; 3] {
         let rgb = i32x4::from([r as i32, g as i32, b as i32, 0]);
-        let r1 = rgb * self.rgb >> self.bit_shift;
+        let r1 = (rgb * self.rgb) >> self.bit_shift;
 
         #[cfg(target_feature = "avx")]
         // x64 can benefit from the direct construction of i32x4 value for clamping

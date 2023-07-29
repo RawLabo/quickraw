@@ -39,11 +39,11 @@ pub(crate) fn detect<T: Read + Seek>(mut reader: T) -> Result<(Kind, Box<str>), 
     let kind = match &header[..2] {
         [0x49, 0x49] | [0x4d, 0x4d] => None,
         _ => {
-            if &header[..4] == [0x46, 0x55, 0x4a, 0x49] {
+            if header[..4] == [0x46, 0x55, 0x4a, 0x49] {
                 quickexif::seek_header_raf(&mut buf_reader, 0).to_report()?;
                 Some(Kind::Raf)
-            } else if &header
-                == &[
+            } else if header
+                == [
                     0, 0, 0, 0x18, 0x66, 0x74, 0x79, 0x70, 0x63, 0x72, 0x78, 0x20, 0, 0, 0, 1,
                 ]
             {
