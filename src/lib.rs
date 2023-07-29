@@ -78,15 +78,24 @@ pub fn extract_image(
     }
 
     let mut image = vec![0u16; image_bytes.len() * 3];
-    let linear_demosaicing = info.cfa_pattern.linear_method();
 
-    image.chunks_exact_mut(3).enumerate().for_each(|(i, v)| {
-        let rgb = linear_demosaicing(i, w, h, &image_bytes);
-        let rgb = info.white_balance.fix(rgb);
-        let rgb = color_matrix.shift_color(&rgb);
-        let rgb = color::gamma_correct(rgb, &gamma_lut);
-        v.copy_from_slice(&rgb);
-    });
+    macro_rules! gen_cfa_processing_branch {
+        ($method:expr) => {
+            for (i, v) in image.chunks_exact_mut(3).enumerate() {
+                let rgb = $method(i, w, h, &image_bytes);
+                let rgb = info.white_balance.fix(rgb);
+                let rgb = color_matrix.shift_color(&rgb);
+                let rgb = color::gamma_correct(rgb, &gamma_lut);
+                v.copy_from_slice(&rgb);
+            }
+        };
+    }
+    match info.cfa_pattern {
+        parse::CFAPattern::RGGB => {
+            gen_cfa_processing_branch!(demosaicing::linear::rggb)
+        }
+        _ => {}
+    }
 
     Ok((image.into_boxed_slice(), w, h))
 }
