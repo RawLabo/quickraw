@@ -1,21 +1,5 @@
 use super::*;
 
-pub(crate) fn grbg(_i: usize, _w: usize, _h: usize, _image: &[u16]) -> [u16; 3] {
-    todo!()
-}
-pub(crate) fn gbrg(_i: usize, _w: usize, _h: usize, _image: &[u16]) -> [u16; 3] {
-    todo!()
-}
-pub(crate) fn bggr(_i: usize, _w: usize, _h: usize, _image: &[u16]) -> [u16; 3] {
-    todo!()
-}
-pub(crate) fn xtrans0(_i: usize, _w: usize, _h: usize, _image: &[u16]) -> [u16; 3] {
-    todo!()
-}
-pub(crate) fn xtrans1(_i: usize, _w: usize, _h: usize, _image: &[u16]) -> [u16; 3] {
-    todo!()
-}
-
 pub(crate) struct Rggb;
 impl Demosaicing for Rggb {
     #[inline(always)]
