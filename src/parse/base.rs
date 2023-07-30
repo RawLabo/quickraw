@@ -72,6 +72,7 @@ pub(crate) fn detect<T: Read + Seek>(mut reader: T) -> Result<(Kind, Box<str>), 
 
     let kind = kind.unwrap_or(match make {
         "SONY" => Kind::Arw,
+        "CANON" => Kind::Cr2,
         _ => Kind::Unsupported,
     });
     Ok((kind, model.into()))

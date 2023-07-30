@@ -1,12 +1,13 @@
 use std::io::{BufReader, Read, Seek};
 
 use crate::{
+    decode,
     report::{Report, ToReport},
     tool::tone_curve::gen_tone_curve_sony,
     Error,
 };
 
-use super::{CFAPattern, DecodingInfo, WhiteBalance};
+use super::{CFAPattern, WhiteBalance};
 
 mod arw_rule {
     #![allow(non_upper_case_globals)]
@@ -60,57 +61,51 @@ pub struct ArwInfo {
     pub thumbnail_addr: u64,
     pub thumbnail_size: usize,
 }
-impl From<ArwInfo> for DecodingInfo {
-    fn from(value: ArwInfo) -> Self {
-        DecodingInfo {
-            width: value.width,
-            height: value.height,
-            white_balance: value.white_balance,
-            cfa_pattern: value.cfa_pattern
-        }
+
+impl decode::Parse<ArwInfo> for ArwInfo {
+    fn get_strip_info(&self) -> (u64, usize) {
+        (self.strip_addr, self.strip_size)
     }
-}
+    fn parse_exif<T: Read + Seek>(mut reader: T) -> Result<ArwInfo, Report> {
+        let buf_reader = BufReader::new(&mut reader);
+        let (exif, is_le) =
+            quickexif::parse_exif(buf_reader, arw_rule::PATH_LST, Some((0, 1))).to_report()?;
 
+        super::gen_get!(exif, arw_rule);
 
-pub(crate) fn parse_exif<T: Read + Seek>(mut reader: T) -> Result<ArwInfo, Report> {
-    let buf_reader = BufReader::new(&mut reader);
-    let (exif, is_le) =
-        quickexif::parse_exif(buf_reader, arw_rule::PATH_LST, Some((0, 1))).to_report()?;
+        let width = get!(width -> u16);
+        let height = get!(height -> u16);
+        let compression = get!(compression -> u16);
+        let orientation = get!(orientation -> u16);
+        let black_level = get!(black_level => u16s);
+        let white_balance = get!(white_balance => u16s);
+        let white_level = get!(white_level => u16s);
+        let cfa_pattern = get!(cfa_pattern -> raw);
 
-    super::gen_get!(exif, arw_rule);
+        let image_addr = get!(strip -> u32) as u64;
+        let image_size = get!(strip_len -> u32) as usize;
 
-    let width = get!(width -> u16);
-    let height = get!(height -> u16);
-    let compression = get!(compression -> u16);
-    let orientation = get!(orientation -> u16);
-    let black_level = get!(black_level => u16s);
-    let white_balance = get!(white_balance => u16s);
-    let white_level = get!(white_level => u16s);
-    let cfa_pattern = get!(cfa_pattern -> raw);
+        let thumbnail_addr = get!(preview_offset -> u32) as u64;
+        let thumbnail_size = get!(preview_len -> u32) as usize;
 
-    let image_addr = get!(strip -> u32) as u64;
-    let image_size = get!(strip_len -> u32) as usize;
+        let tone_curve_points = get!(tone_curve => u16s);
+        let tone_curve = gen_tone_curve_sony(&tone_curve_points);
 
-    let thumbnail_addr = get!(preview_offset -> u32) as u64;
-    let thumbnail_size = get!(preview_len -> u32) as usize;
-
-    let tone_curve_points = get!(tone_curve => u16s);
-    let tone_curve = gen_tone_curve_sony(&tone_curve_points);
-
-    Ok(ArwInfo {
-        is_le,
-        compression,
-        black_level: black_level[0],
-        white_balance: [white_balance[0], white_balance[1], white_balance[3]].into(),
-        white_level: white_level[0],
-        cfa_pattern: cfa_pattern.into(),
-        tone_curve,
-        width: width as usize,
-        height: height as usize,
-        orientation,
-        strip_addr: image_addr,
-        strip_size: image_size,
-        thumbnail_addr,
-        thumbnail_size,
-    })
+        Ok(ArwInfo {
+            is_le,
+            compression,
+            black_level: black_level[0],
+            white_balance: [white_balance[0], white_balance[1], white_balance[3]].into(),
+            white_level: white_level[0],
+            cfa_pattern: cfa_pattern.into(),
+            tone_curve,
+            width: width as usize,
+            height: height as usize,
+            orientation,
+            strip_addr: image_addr,
+            strip_size: image_size,
+            thumbnail_addr,
+            thumbnail_size,
+        })
+    }
 }

@@ -28,7 +28,11 @@ pub(crate) mod tool;
 
 pub use color::data as color_data;
 
-use crate::demosaicing::*;
+use crate::{
+    decode::{Decode, Parse},
+    demosaicing::*,
+    parse::arw::ArwInfo,
+};
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
@@ -46,22 +50,34 @@ pub enum Error {
     Custom(&'static str),
 }
 
+fn decode<T: Parse<T> + Decode<T>>(
+    mut reader: impl Read + Seek,
+) -> Result<(Box<[u16]>, DecodingInfo), Report> {
+    let info = T::parse_exif(&mut reader).to_report()?;
+    let (strip_addr, strip_size) = info.get_strip_info();
+    let strip_bytes = parse::get_bytes(&mut reader, strip_addr, strip_size).to_report()?;
+    let image_bytes = info.decode_with_preprocess(strip_bytes)?;
+    Ok((image_bytes, info.to_decoding_info()))
+}
+
 pub fn extract_image(
     mut reader: impl Read + Seek,
     gamma: f32,
     color_space: &[f32; 9],
 ) -> Result<(Box<[u16]>, usize, usize), Report> {
+    // parse and decode
     let (kind, model) = detect(&mut reader).to_report()?;
     let (image_bytes, info): (Box<[u16]>, DecodingInfo) = match kind {
-        Kind::Arw => {
-            let info = parse::arw::parse_exif(&mut reader).to_report()?;
-            let strip_bytes =
-                parse::get_bytes(&mut reader, info.strip_addr, info.strip_size).to_report()?;
-            let image_bytes = decode::arw::decode_with_preprocess(&info, strip_bytes)?;
-            (image_bytes, info.into())
-        }
+        Kind::Arw => decode::<ArwInfo>(&mut reader).to_report()?,
         _ => return Err(Error::UnsupportedRawFile).to_report(),
     };
+
+    // safety check
+    let w = info.width;
+    let h = info.height;
+    if w * h != image_bytes.len() {
+        return Err(Error::InvalidDecodedImage(w, h, image_bytes.len())).to_report();
+    }
 
     // prepare color conversion
     let gamma_lut = color::gen_gamma_lut(gamma);
@@ -72,16 +88,9 @@ pub fn extract_image(
         .into();
     color_matrix.update_colorspace(color_space);
 
-    let w = info.width;
-    let h = info.height;
-
-    if w * h != image_bytes.len() {
-        return Err(Error::InvalidDecodedImage(w, h, image_bytes.len())).to_report();
-    }
-
+    // demosaicing and postprocesses
     let mut image = vec![0u16; image_bytes.len() * 3];
     let mut pixel_info = PixelInfo::new(w, h);
-
     macro_rules! gen_cfa_processing_branch {
         ($method:expr) => {
             for (i, v) in image.chunks_exact_mut(3).enumerate() {
