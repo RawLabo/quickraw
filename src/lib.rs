@@ -56,7 +56,7 @@ fn decode<T: Parse<T> + Decode<T>>(
     let info = T::parse_exif(&mut reader).to_report()?;
     let (strip_addr, strip_size) = info.get_strip_info();
     let strip_bytes = parse::get_bytes(&mut reader, strip_addr, strip_size).to_report()?;
-    let image_bytes = info.decode_with_preprocess(strip_bytes)?;
+    let image_bytes = info.decode_with_preprocess(strip_bytes).to_report()?;
     Ok((image_bytes, info.to_decoding_info()))
 }
 
