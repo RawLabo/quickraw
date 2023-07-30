@@ -13,12 +13,15 @@ pub(crate) fn gen_gamma_lut(gamma: f32) -> [u16; 65536] {
 }
 
 #[inline(always)]
-pub(crate) fn gamma_correct([r, g, b]: [u16; 3], gamma_lut: &[u16; 65536]) -> [u16; 3] {
-    [
-        gamma_lut[r as usize],
-        gamma_lut[g as usize],
-        gamma_lut[b as usize],
-    ]
+pub(crate) fn gamma_correct<const N: usize>(
+    [r, g, b]: [u16; 3],
+    gamma_lut: &[u16; 65536],
+) -> [u16; N] {
+    let mut result = [u16::MAX; N];
+    result[0] = gamma_lut[r as usize];
+    result[1] = gamma_lut[g as usize];
+    result[2] = gamma_lut[b as usize];
+    result
 }
 
 impl WhiteBalance {

@@ -5,7 +5,7 @@ fn main() {
     let args = args.into_iter().map(|x| x.as_str()).collect::<Box<_>>();
 
     let sample_file = File::open("examples/samples/sample1.ARW").unwrap();
-    let (image_u16, w, h) = quickraw::extract_image(
+    let (image_u16, w, h) = quickraw::extract_image::<3>(
         sample_file,
         quickraw::color_data::GAMMA_SRGB,
         &quickraw::color_data::XYZ2SRGB,

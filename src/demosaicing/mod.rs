@@ -126,3 +126,7 @@ fn avg_corner_4(image: &[u16], i: usize, w: usize) -> (u16, u16) {
     let y = (e + f + g + h) / 4;
     (x as u16, y as u16)
 }
+
+pub(crate) trait Demosaicing {
+    fn demosaicing(i: usize, w: usize, stat: PixelType, image: &[u16]) -> [u16; 3];
+}

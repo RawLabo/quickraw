@@ -60,7 +60,27 @@ fn decode<T: Parse<T> + Decode<T>>(
     Ok((image_bytes, info.to_decoding_info()))
 }
 
-pub fn extract_image(
+fn demosaicing_with_postprocess<T: Demosaicing, const N: usize>(
+    image_bytes: &[u16],
+    info: &DecodingInfo,
+    gamma_lut: &[u16; 65536],
+    color_matrix: &ColorMatrix,
+) -> Box<[u16]> {
+    let mut target = vec![0u16; image_bytes.len() * N];
+    let mut pixel_info = PixelInfo::new(info.width, info.height);
+    for (i, v) in target.chunks_exact_mut(N).enumerate() {
+        let stat = pixel_info.get_stat_and_update();
+        let rgb = T::demosaicing(i, info.width, stat, &image_bytes);
+        let rgb = info.white_balance.fix(rgb);
+        let rgb = color_matrix.shift_color(&rgb);
+        let rgb = color::gamma_correct::<N>(rgb, &gamma_lut);
+        v.copy_from_slice(&rgb);
+    }
+    target.into_boxed_slice()
+}
+
+/// N = 3 means RGB, N = 4 means RGBA
+pub fn extract_image<const N: usize>(
     mut reader: impl Read + Seek,
     gamma: f32,
     color_space: &[f32; 9],
@@ -73,10 +93,13 @@ pub fn extract_image(
     };
 
     // safety check
-    let w = info.width;
-    let h = info.height;
-    if w * h != image_bytes.len() {
-        return Err(Error::InvalidDecodedImage(w, h, image_bytes.len())).to_report();
+    if info.width * info.height != image_bytes.len() {
+        return Err(Error::InvalidDecodedImage(
+            info.width,
+            info.height,
+            image_bytes.len(),
+        ))
+        .to_report();
     }
 
     // prepare color conversion
@@ -89,26 +112,15 @@ pub fn extract_image(
     color_matrix.update_colorspace(color_space);
 
     // demosaicing and postprocesses
-    let mut image = vec![0u16; image_bytes.len() * 3];
-    let mut pixel_info = PixelInfo::new(w, h);
-    macro_rules! gen_cfa_processing_branch {
-        ($method:expr) => {
-            for (i, v) in image.chunks_exact_mut(3).enumerate() {
-                let stat = pixel_info.get_stat_and_update();
-                let rgb = $method(i, w, stat, &image_bytes);
-                let rgb = info.white_balance.fix(rgb);
-                let rgb = color_matrix.shift_color(&rgb);
-                let rgb = color::gamma_correct(rgb, &gamma_lut);
-                v.copy_from_slice(&rgb);
-            }
-        };
-    }
-    match info.cfa_pattern {
-        parse::CFAPattern::Rggb => {
-            gen_cfa_processing_branch!(demosaicing::linear::rggb)
-        }
-        _ => {}
-    }
+    let image = match info.cfa_pattern {
+        parse::CFAPattern::Rggb => demosaicing_with_postprocess::<linear::Rggb, N>(
+            &image_bytes,
+            &info,
+            &gamma_lut,
+            &color_matrix,
+        ),
+        _ => vec![].into(),
+    };
 
-    Ok((image.into_boxed_slice(), w, h))
+    Ok((image, info.width, info.height))
 }
