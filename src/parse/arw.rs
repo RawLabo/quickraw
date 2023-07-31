@@ -55,7 +55,7 @@ pub struct ArwInfo {
     pub black_level: u16,
     pub white_balance: WhiteBalance,
     pub white_level: u16,
-    pub tone_curve: Box<[u16]>,
+    pub tone_curve: [u16;4096],
     pub strip_addr: u64,
     pub strip_size: usize,
     pub thumbnail_addr: u64,

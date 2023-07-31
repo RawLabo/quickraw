@@ -3,7 +3,7 @@ use crate::{
     Error,
 };
 
-struct BitReader<'a> {
+pub(crate) struct BitReader<'a> {
     source: &'a [u8],
     position: usize,
     cache: u32,
