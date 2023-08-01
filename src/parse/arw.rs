@@ -53,9 +53,9 @@ pub struct ArwInfo {
     pub compression: u16,
     pub cfa_pattern: CFAPattern,
     pub black_level: u16,
+    pub scaleup_factor: u16,
     pub white_balance: WhiteBalance,
-    pub white_level: u16,
-    pub tone_curve: [u16;4096],
+    pub tone_curve: [u16; 4096],
     pub strip_addr: u64,
     pub strip_size: usize,
     pub thumbnail_addr: u64,
@@ -79,7 +79,6 @@ impl decode::Parse<ArwInfo> for ArwInfo {
         let orientation = get!(orientation -> u16);
         let black_level = get!(black_level => u16s);
         let white_balance = get!(white_balance => u16s);
-        let white_level = get!(white_level => u16s);
         let cfa_pattern = get!(cfa_pattern -> raw);
 
         let image_addr = get!(strip -> u32) as u64;
@@ -91,12 +90,23 @@ impl decode::Parse<ArwInfo> for ArwInfo {
         let tone_curve_points = get!(tone_curve => u16s);
         let tone_curve = gen_tone_curve_sony(&tone_curve_points);
 
+        let white_level =
+            if let Some(values) = exif.get(arw_rule::white_level).and_then(|x| x.u16s()) {
+                values[0]
+            } else {
+                get!(white_level -> u16)
+            };
+        let scaleup_factor = match white_level {
+            15360 => 2,
+            _ => 1,
+        };
+
         Ok(ArwInfo {
             is_le,
             compression,
             black_level: black_level[0],
             white_balance: [white_balance[0], white_balance[1], white_balance[3]].into(),
-            white_level: white_level[0],
+            scaleup_factor,
             cfa_pattern: cfa_pattern.into(),
             tone_curve,
             width: width as usize,

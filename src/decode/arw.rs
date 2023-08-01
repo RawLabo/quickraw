@@ -10,7 +10,7 @@ impl Preprocess for ArwInfo {
         x.saturating_sub(self.black_level)
     }
     fn white_level_scaleup(&self, x: u16) -> u16 {
-        x * 4
+        x << self.scaleup_factor
     }
 }
 
