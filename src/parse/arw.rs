@@ -1,11 +1,7 @@
+use erreport::Report;
 use std::io::{BufReader, Read, Seek};
 
-use crate::{
-    decode,
-    report::{Report, ToReport},
-    tool::tone_curve::gen_tone_curve_sony,
-    Error,
-};
+use crate::{decode, tool::tone_curve::gen_tone_curve_sony, Error, ToReport};
 
 use super::{CFAPattern, WhiteBalance};
 

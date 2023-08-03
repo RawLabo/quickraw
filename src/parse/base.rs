@@ -1,9 +1,6 @@
+use crate::{Error, ToReport};
+use erreport::Report;
 use std::io::{BufReader, Read, Seek, SeekFrom};
-
-use crate::{
-    report::{Report, ToReport},
-    Error,
-};
 
 mod base_rule {
     #![allow(non_upper_case_globals)]
@@ -27,7 +24,6 @@ pub(crate) enum Kind {
     Rw2,
     Unsupported,
 }
-
 
 pub(crate) fn detect<T: Read + Seek>(mut reader: T) -> Result<(Kind, Box<str>), Report> {
     let mut buf_reader = BufReader::new(&mut reader);

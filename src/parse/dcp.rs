@@ -1,9 +1,6 @@
+use crate::{Error, ToReport};
+use erreport::Report;
 use std::io::{BufReader, Read, Seek};
-
-use crate::{
-    report::{Report, ToReport},
-    Error,
-};
 
 use super::ColorMatrix;
 

@@ -1,9 +1,9 @@
+use erreport::Report;
 use std::io::{Read, Seek};
 
-use crate::{report::Report, tool, parse::DecodingInfo};
+use crate::{parse::DecodingInfo, tool};
 
 pub(crate) mod arw;
-
 
 /// These three traits represent three processes needed to decode: ParseExif -> Decode compressed bytes -> Preprocess of image
 pub(crate) trait Parse<Info> {
@@ -26,7 +26,6 @@ trait Preprocess {
     fn black_level_substract(&self, x: u16) -> u16;
     fn white_level_scaleup(&self, x: u16) -> u16;
 }
-
 
 /// uncompressed 14bit/16bit data in 16bit form
 fn general_16bit_iter(image_bytes: &[u8], is_le: bool) -> impl Iterator<Item = u16> + '_ {

@@ -1,7 +1,5 @@
-use crate::{
-    report::{Report, ToReport},
-    Error,
-};
+use crate::{Error, ToReport};
+use erreport::Report;
 
 pub(crate) struct BitReader<'a> {
     source: &'a [u8],

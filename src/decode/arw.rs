@@ -1,10 +1,11 @@
 use super::{general_16bit_iter, Decode, Preprocess};
 use crate::{
     parse::{arw::ArwInfo, DecodingInfo},
-    report::{Report, ToReport},
     tool::bit_reader::BitReader,
-    Error,
+    Error, ToReport,
 };
+use erreport::Report;
+
 impl Preprocess for ArwInfo {
     fn black_level_substract(&self, x: u16) -> u16 {
         x.saturating_sub(self.black_level)
@@ -56,7 +57,7 @@ impl ArwInfo {
                     let max_index = reader.read_bits_le(4).to_report()? as usize;
                     let min_index = reader.read_bits_le(4).to_report()? as usize;
                     let scale = 32 - ((max - min) >> 7).leading_zeros(); // max scale is 4bits
-                    
+
                     for (i, v) in seg.iter_mut().skip(skip).step_by(2).enumerate() {
                         let val = if i == max_index {
                             max

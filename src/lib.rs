@@ -13,12 +13,13 @@
 
 use std::io::{Read, Seek};
 
-erreport::gen_report_code!();
+erreport::gen_trait_to_report!();
+use erreport::Report;
+
 use parse::{
     base::{detect, Kind},
     ColorMatrix, DecodingInfo,
 };
-use report::{Report, ToReport};
 
 pub(crate) mod color;
 pub(crate) mod decode;

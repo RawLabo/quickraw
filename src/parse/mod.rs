@@ -1,4 +1,5 @@
-use crate::report::{Report, ToReport};
+use crate::ToReport;
+use erreport::Report;
 use std::io::{Read, Seek, SeekFrom};
 use wide::i32x4;
 
@@ -10,7 +11,7 @@ pub(crate) struct DecodingInfo {
     pub(crate) width: usize,
     pub(crate) height: usize,
     pub(crate) white_balance: WhiteBalance,
-    pub(crate) cfa_pattern: CFAPattern
+    pub(crate) cfa_pattern: CFAPattern,
 }
 
 pub struct ColorMatrix {
@@ -135,7 +136,6 @@ impl<'a> From<&'a [u8]> for CFAPattern {
         }
     }
 }
-
 
 pub(crate) fn get_bytes<T: Read + Seek>(
     mut reader: T,
