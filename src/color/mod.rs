@@ -62,8 +62,7 @@ impl ColorMatrix {
         [r2[0] as u16, r2[1] as u16, r2[2] as u16]
     }
 
-    /// self.matrix_with_colorspace = color_space * self.matrix *
-
+    /// self.matrix_with_colorspace = color_space * self.matrix
     pub(crate) fn update_colorspace(&mut self, color_space: &[f32; 9]) {
         let a = color_space;
         let b = self.matrix;
