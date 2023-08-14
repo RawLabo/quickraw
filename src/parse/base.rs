@@ -9,6 +9,7 @@ mod base_rule {
         0 {
             0x010f make
             0x0110 model
+            0xc612 dng_version
         }
     );
 }
@@ -66,9 +67,10 @@ pub(crate) fn detect<T: Read + Seek>(mut reader: T) -> Result<(Kind, Box<str>), 
         .ok_or(Error::IsNone)
         .to_report()?;
 
-    let kind = kind.unwrap_or(match make {
-        "SONY" => Kind::Arw,
-        "CANON" => Kind::Cr2,
+    let kind = kind.unwrap_or(match (make, exif.get(base_rule::dng_version)) {
+        (_, Some(_)) => Kind::Dng,
+        ("SONY", _) => Kind::Arw,
+        ("CANON", _) => Kind::Cr2,
         _ => Kind::Unsupported,
     });
     Ok((kind, model.into()))
