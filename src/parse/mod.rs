@@ -6,7 +6,12 @@ use wide::i32x4;
 pub(crate) mod arw;
 pub(crate) mod base;
 pub(crate) mod dcp;
+pub(crate) mod dng;
 
+/// These three traits represent three processes needed to decode: ParseExif -> Decode compressed bytes -> Preprocess of image
+pub(crate) trait Parse<Info> {
+    fn parse_exif<T: Read + Seek>(reader: T) -> Result<Info, Report>;
+}
 pub(crate) struct DecodingInfo {
     pub(crate) width: usize,
     pub(crate) height: usize,
@@ -152,6 +157,9 @@ pub(crate) fn get_bytes<T: Read + Seek>(
 macro_rules! gen_get {
     ($exif:expr, $rule:tt) => {
         macro_rules! get {
+            ($tag:tt) => {
+                $exif.get($rule::$tag)
+            };
             ($tag:tt => $fn:tt) => {
                 $exif
                     .get($rule::$tag)

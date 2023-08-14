@@ -1,17 +1,11 @@
+use crate::{parse::DecodingInfo, tool};
 use erreport::Report;
 use std::io::{Read, Seek};
 
-use crate::{parse::DecodingInfo, tool};
-
 pub(crate) mod arw;
 
-/// These three traits represent three processes needed to decode: ParseExif -> Decode compressed bytes -> Preprocess of image
-pub(crate) trait Parse<Info> {
-    fn parse_exif<T: Read + Seek>(reader: T) -> Result<Info, Report>;
-    fn get_strip_info(&self) -> (u64, usize);
-}
 pub(crate) trait Decode<Info> {
-    fn decode_with_preprocess(&self, strip_bytes: Box<[u8]>) -> Result<Box<[u16]>, Report>;
+    fn decode_with_preprocess<RS: Read + Seek>(&self, reader: RS) -> Result<Box<[u16]>, Report>;
     fn to_decoding_info(self) -> DecodingInfo;
 }
 trait Preprocess {

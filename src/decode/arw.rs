@@ -1,6 +1,8 @@
+use std::io::{Read, Seek};
+
 use super::{general_16bit_iter, Decode, Preprocess};
 use crate::{
-    parse::{arw::ArwInfo, DecodingInfo},
+    parse::{self, arw::ArwInfo, DecodingInfo},
     tool::bit_reader::BitReader,
     Error, ToReport,
 };
@@ -24,7 +26,12 @@ impl Decode<ArwInfo> for ArwInfo {
             cfa_pattern: self.cfa_pattern,
         }
     }
-    fn decode_with_preprocess(&self, strip_bytes: Box<[u8]>) -> Result<Box<[u16]>, Report> {
+    fn decode_with_preprocess<RS: Read + Seek>(
+        &self,
+        mut reader: RS,
+    ) -> Result<Box<[u16]>, Report> {
+        let strip_bytes =
+            parse::get_bytes(&mut reader, self.strip_addr, self.strip_size).to_report()?;
         match self.compression {
             1 => {
                 let image = general_16bit_iter(&strip_bytes, self.is_le)

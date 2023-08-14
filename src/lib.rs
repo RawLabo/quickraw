@@ -29,11 +29,7 @@ pub(crate) mod tool;
 
 pub use color::data as color_data;
 
-use crate::{
-    decode::{Decode, Parse},
-    demosaicing::*,
-    parse::arw::ArwInfo,
-};
+use crate::{decode::Decode, demosaicing::*, parse::arw::ArwInfo, parse::Parse};
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
@@ -55,9 +51,7 @@ fn decode<T: Parse<T> + Decode<T>>(
     mut reader: impl Read + Seek,
 ) -> Result<(Box<[u16]>, DecodingInfo), Report> {
     let info = T::parse_exif(&mut reader).to_report()?;
-    let (strip_addr, strip_size) = info.get_strip_info();
-    let strip_bytes = parse::get_bytes(&mut reader, strip_addr, strip_size).to_report()?;
-    let image_bytes = info.decode_with_preprocess(strip_bytes).to_report()?;
+    let image_bytes = info.decode_with_preprocess(&mut reader).to_report()?;
     Ok((image_bytes, info.to_decoding_info()))
 }
 

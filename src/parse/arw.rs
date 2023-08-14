@@ -1,9 +1,9 @@
 use erreport::Report;
 use std::io::{BufReader, Read, Seek};
 
-use crate::{decode, tool::tone_curve::gen_tone_curve_sony, Error, ToReport};
+use crate::{tool::tone_curve::gen_tone_curve_sony, Error, ToReport};
 
-use super::{CFAPattern, WhiteBalance};
+use super::{CFAPattern, Parse, WhiteBalance};
 
 mod arw_rule {
     #![allow(non_upper_case_globals)]
@@ -56,10 +56,7 @@ pub struct ArwInfo {
     pub thumbnail_size: usize,
 }
 
-impl decode::Parse<ArwInfo> for ArwInfo {
-    fn get_strip_info(&self) -> (u64, usize) {
-        (self.strip_addr, self.strip_size)
-    }
+impl Parse<ArwInfo> for ArwInfo {
     fn parse_exif<T: Read + Seek>(mut reader: T) -> Result<ArwInfo, Report> {
         let buf_reader = BufReader::new(&mut reader);
         let (exif, is_le) =
