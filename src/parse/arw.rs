@@ -17,8 +17,6 @@ mod arw_rule {
             0x787f white_level
         }
         0 {
-            0x010f make
-            0x0110 model
             0x0112 orientation
             0x0201 preview_offset
             0x0202 preview_len
