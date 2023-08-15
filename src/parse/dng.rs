@@ -3,6 +3,14 @@ use crate::{Error, ToReport};
 use erreport::Report;
 use std::io::{BufReader, Read, Seek};
 
+#[derive(thiserror::Error, Debug)]
+pub(crate) enum DngError {
+    #[error("No subifd blocks contains cfa_pattern.")]
+    NoCfaPatternFound,
+    #[error("Unsupported compression type: {0}")]
+    CompressionTypeNotSupported(u16),
+}
+
 mod dng_rule {
     #![allow(non_upper_case_globals)]
     use quickexif::gen_tags_info;
@@ -186,10 +194,7 @@ impl Parse<DngInfo> for DngInfo {
                 dng_rule::cfa_pattern2,
             ]
         } else {
-            return Err(Error::Custom(
-                "Dng error: No subifd blocks contains cfa_pattern.".to_owned(),
-            ))
-            .to_report();
+            return Err(DngError::NoCfaPatternFound).to_report();
         };
 
         let compression = get!(tags[0], u16);
@@ -208,12 +213,7 @@ impl Parse<DngInfo> for DngInfo {
                     let tile_len = get!(tags[6], u32);
                     (0, 0, tile_offsets, tile_byte_counts, tile_width, tile_len)
                 }
-                _ => {
-                    return Err(Error::Custom(format!(
-                        "Dng error: unsupported compression type: {compression}"
-                    )))
-                    .to_report()
-                }
+                _ => return Err(DngError::CompressionTypeNotSupported(compression)).to_report(),
             };
 
         let thumbnail = {

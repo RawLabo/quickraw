@@ -1,7 +1,13 @@
-use super::{Decode, Preprocess};
-use crate::parse::{dng::DngInfo, DecodingInfo};
-use std::io::{Read, Seek};
+use super::{general_16bit_iter, Decode, Preprocess};
+use crate::{
+    parse::{
+        dng::{DngError, DngInfo},
+        get_bytes, DecodingInfo,
+    },
+    Error, ToReport,
+};
 use erreport::Report;
+use std::io::{Read, Seek};
 
 impl Preprocess for DngInfo {
     fn black_level_substract(&self, x: u16) -> u16 {
@@ -21,8 +27,25 @@ impl Decode for DngInfo {
             cfa_pattern: self.cfa_pattern,
         }
     }
-    fn decode_with_preprocess<RS: Read + Seek>(&self, reader: RS) -> Result<Box<[u16]>, Report> {
-        
-        Ok(vec![].into_boxed_slice())
+    fn decode_with_preprocess<RS: Read + Seek>(
+        &self,
+        mut reader: RS,
+    ) -> Result<Box<[u16]>, Report> {
+        match self.compression {
+            1 => {
+                // uncompressed
+                let strip_bytes =
+                    get_bytes(&mut reader, self.strip_addr, self.strip_size).to_report()?;
+                let image = general_16bit_iter(&strip_bytes, self.is_le)
+                    .map(|v| self.bl_then_wl(v))
+                    .collect();
+                Ok(image)
+            }
+            7 => {
+                // lossless compressed
+                todo!()
+            }
+            _ => Err(DngError::CompressionTypeNotSupported(self.compression)).to_report(),
+        }
     }
 }
