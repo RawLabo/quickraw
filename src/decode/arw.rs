@@ -17,7 +17,7 @@ impl Preprocess for ArwInfo {
     }
 }
 
-impl Decode<ArwInfo> for ArwInfo {
+impl Decode for ArwInfo {
     fn to_decoding_info(self) -> DecodingInfo {
         DecodingInfo {
             width: self.width,

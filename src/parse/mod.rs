@@ -167,9 +167,23 @@ macro_rules! gen_get {
                     .ok_or(Error::IsNone)
                     .to_report()?
             };
-            ($tag:tt -> $fn:tt) => {
+            ($tag:expr => $fn:tt) => {
+                $exif
+                    .get($tag)
+                    .and_then(|x| x.$fn())
+                    .ok_or(Error::IsNone)
+                    .to_report()?
+            };
+            ($tag:tt, $fn:tt) => {
                 $exif
                     .get($rule::$tag)
+                    .map(|x| x.$fn())
+                    .ok_or(Error::IsNone)
+                    .to_report()?
+            };
+            ($tag:expr, $fn:tt) => {
+                $exif
+                    .get($tag)
                     .map(|x| x.$fn())
                     .ok_or(Error::IsNone)
                     .to_report()?

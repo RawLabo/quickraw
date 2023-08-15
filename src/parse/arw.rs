@@ -64,19 +64,19 @@ impl Parse<ArwInfo> for ArwInfo {
 
         super::gen_get!(exif, arw_rule);
 
-        let width = get!(width -> u16);
-        let height = get!(height -> u16);
-        let compression = get!(compression -> u16);
-        let orientation = get!(orientation -> u16);
+        let width = get!(width, u16);
+        let height = get!(height, u16);
+        let compression = get!(compression, u16);
+        let orientation = get!(orientation, u16);
         let black_level = get!(black_level => u16s);
         let white_balance = get!(white_balance => u16s);
-        let cfa_pattern = get!(cfa_pattern -> raw);
+        let cfa_pattern = get!(cfa_pattern, raw);
 
-        let image_addr = get!(strip -> u32) as u64;
-        let image_size = get!(strip_len -> u32) as usize;
+        let image_addr = get!(strip, u32) as u64;
+        let image_size = get!(strip_len, u32) as usize;
 
-        let thumbnail_addr = get!(preview_offset -> u32) as u64;
-        let thumbnail_size = get!(preview_len -> u32) as usize;
+        let thumbnail_addr = get!(preview_offset, u32) as u64;
+        let thumbnail_size = get!(preview_len, u32) as usize;
 
         let tone_curve_points = get!(tone_curve => u16s);
         let tone_curve = gen_tone_curve_sony(&tone_curve_points);
@@ -85,7 +85,7 @@ impl Parse<ArwInfo> for ArwInfo {
             if let Some(values) = exif.get(arw_rule::white_level).and_then(|x| x.u16s()) {
                 values[0]
             } else {
-                get!(white_level -> u16)
+                get!(white_level, u16)
             };
         let scaleup_factor = match white_level {
             15360 => 2,

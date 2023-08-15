@@ -2,9 +2,10 @@ use crate::{parse::DecodingInfo, tool};
 use erreport::Report;
 use std::io::{Read, Seek};
 
+pub(crate) mod dng;
 pub(crate) mod arw;
 
-pub(crate) trait Decode<Info> {
+pub(crate) trait Decode {
     fn decode_with_preprocess<RS: Read + Seek>(&self, reader: RS) -> Result<Box<[u16]>, Report>;
     fn to_decoding_info(self) -> DecodingInfo;
 }

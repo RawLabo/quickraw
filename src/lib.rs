@@ -14,11 +14,14 @@
 use std::io::{Read, Seek};
 
 erreport::gen_trait_to_report!();
+use decode::Decode;
+use demosaicing::*;
 use erreport::Report;
-
 use parse::{
+    arw::ArwInfo,
     base::{detect, Kind},
-    ColorMatrix, DecodingInfo,
+    dng::DngInfo,
+    ColorMatrix, DecodingInfo, Parse,
 };
 
 pub(crate) mod color;
@@ -28,8 +31,6 @@ pub(crate) mod parse;
 pub(crate) mod tool;
 
 pub use color::data as color_data;
-
-use crate::{decode::Decode, demosaicing::*, parse::arw::ArwInfo, parse::Parse};
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
@@ -47,7 +48,7 @@ pub enum Error {
     Custom(&'static str),
 }
 
-fn decode<T: Parse<T> + Decode<T>>(
+fn decode<T: Parse<T> + Decode>(
     mut reader: impl Read + Seek,
 ) -> Result<(Box<[u16]>, DecodingInfo), Report> {
     let info = T::parse_exif(&mut reader).to_report()?;
@@ -84,6 +85,7 @@ pub fn extract_image<const N: usize>(
     let (kind, model) = detect(&mut reader).to_report()?;
     let (image_bytes, info): (Box<[u16]>, DecodingInfo) = match kind {
         Kind::Arw => decode::<ArwInfo>(&mut reader).to_report()?,
+        Kind::Dng => decode::<DngInfo>(&mut reader).to_report()?,
         _ => return Err(Error::UnsupportedRawFile).to_report(),
     };
 
