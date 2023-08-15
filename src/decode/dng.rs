@@ -1,6 +1,7 @@
 use super::{Decode, Preprocess};
 use crate::parse::{dng::DngInfo, DecodingInfo};
 use std::io::{Read, Seek};
+use erreport::Report;
 
 impl Preprocess for DngInfo {
     fn black_level_substract(&self, x: u16) -> u16 {
@@ -20,7 +21,8 @@ impl Decode for DngInfo {
             cfa_pattern: self.cfa_pattern,
         }
     }
-    fn decode_with_preprocess<RS: Read + Seek>(&self, reader: RS) -> Result<Box<[u16]>, erreport::Report> {
-        todo!()
+    fn decode_with_preprocess<RS: Read + Seek>(&self, reader: RS) -> Result<Box<[u16]>, Report> {
+        
+        Ok(vec![].into_boxed_slice())
     }
 }

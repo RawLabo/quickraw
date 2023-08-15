@@ -45,7 +45,7 @@ pub enum Error {
     #[error("The decoded image size is invalid: {0} * {1} != {2}")]
     InvalidDecodedImage(usize, usize, usize),
     #[error("{0}")]
-    Custom(&'static str),
+    Custom(String),
 }
 
 fn decode<T: Parse<T> + Decode>(

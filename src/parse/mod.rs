@@ -160,6 +160,9 @@ macro_rules! gen_get {
             ($tag:tt) => {
                 $exif.get($rule::$tag)
             };
+            ($tag:expr) => {
+                $exif.get($tag)
+            };
             ($tag:tt => $fn:tt) => {
                 $exif
                     .get($rule::$tag)
