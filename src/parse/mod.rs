@@ -16,7 +16,7 @@ pub(crate) struct DecodingInfo {
     pub(crate) width: usize,
     pub(crate) height: usize,
     pub(crate) white_balance: WhiteBalance,
-    pub(crate) cfa_pattern: CFAPattern,
+    pub(crate) cfa_pattern: Option<CFAPattern>,
     pub(crate) color_matrix: Option<ColorMatrix>,
 }
 

@@ -25,16 +25,20 @@ impl Decode for DngInfo {
             height: self.height,
             white_balance: self.white_balance,
             cfa_pattern: self.cfa_pattern,
-            color_matrix: Some(self.color_matrix_2)
+            color_matrix: Some(self.color_matrix_2),
         }
     }
     fn decode_with_preprocess<RS: Read + Seek>(
         &self,
         mut reader: RS,
     ) -> Result<Box<[u16]>, Report> {
-        match self.compression {
-            1 => {
-                // uncompressed
+        match (self.compression, self.cfa_pattern.as_ref()) {
+            (1, None) => {
+                // uncompressed rgb
+                todo!()
+            }
+            (1, _) => {
+                // uncompressed bayer
                 let strip_bytes =
                     get_bytes(&mut reader, self.strip_addr, self.strip_size).to_report()?;
                 let image = general_16bit_iter(&strip_bytes, self.is_le)
@@ -42,8 +46,12 @@ impl Decode for DngInfo {
                     .collect();
                 Ok(image)
             }
-            7 => {
-                // lossless compressed
+            (7, None) => {
+                // lossless compressed rgb
+                todo!()
+            }
+            (7, _) => {
+                // lossless compressed bayer
                 todo!()
             }
             _ => Err(DngError::CompressionTypeNotSupported(self.compression)).to_report(),

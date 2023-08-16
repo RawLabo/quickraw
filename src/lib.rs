@@ -89,6 +89,11 @@ pub fn extract_image<const N: usize>(
         _ => return Err(Error::UnsupportedRawFile).to_report(),
     };
 
+    let Some(cfa_pattern) = info.cfa_pattern.as_ref() else {
+        // is rgb pattern
+        return Ok((image_bytes, info.width, info.height));
+    };
+
     // safety check
     if info.width * info.height != image_bytes.len() {
         return Err(Error::InvalidDecodedImage(
@@ -111,7 +116,7 @@ pub fn extract_image<const N: usize>(
     color_matrix.update_colorspace(color_space);
 
     // demosaicing and postprocesses
-    let image = match info.cfa_pattern {
+    let image = match cfa_pattern {
         parse::CFAPattern::Rggb => demosaicing_with_postprocess::<linear::Rggb, N>(
             &image_bytes,
             &info,
