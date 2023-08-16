@@ -4,7 +4,7 @@ use crate::{
         dng::{DngError, DngInfo},
         get_bytes, DecodingInfo,
     },
-    Error, ToReport,
+    ToReport,
 };
 use erreport::Report;
 use std::io::{Read, Seek};

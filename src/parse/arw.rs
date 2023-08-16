@@ -1,7 +1,7 @@
 use erreport::Report;
 use std::io::{BufReader, Read, Seek};
 
-use crate::{tool::tone_curve::gen_tone_curve_sony, Error, ToReport};
+use crate::{tool::tone_curve::gen_tone_curve_sony, Error, ToReport, parse::get_scaleup_factor};
 
 use super::{CFAPattern, Parse, WhiteBalance};
 
@@ -87,10 +87,8 @@ impl Parse<ArwInfo> for ArwInfo {
             } else {
                 get!(white_level, u16)
             };
-        let scaleup_factor = match white_level {
-            15360 => 2,
-            _ => 1,
-        };
+
+        let scaleup_factor = get_scaleup_factor(white_level);
 
         Ok(ArwInfo {
             is_le,

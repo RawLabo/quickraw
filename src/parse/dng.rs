@@ -1,5 +1,5 @@
 use super::{CFAPattern, ColorMatrix, Parse, WhiteBalance};
-use crate::{Error, ToReport};
+use crate::{Error, ToReport, parse::get_scaleup_factor};
 use erreport::Report;
 use std::io::{BufReader, Read, Seek};
 
@@ -227,14 +227,15 @@ impl Parse<DngInfo> for DngInfo {
         let width = get!(tags[9], u32) as usize;
         let height = get!(tags[10], u32) as usize;
         let white_level = get!(tags[11], u16);
-        let black_level = get!(tags[12], u16);
+        let black_level = if let Some(bl) = exif.get(tags[12]).and_then(|x| x.r64s()) {
+            bl[0] as u16
+        } else {
+            get!(tags[12], u16)
+        };
         let cfa_pattern = get!(tags[13], raw);
 
-        let scaleup_factor = match white_level {
-            16383 => 2,
-            _ => 1,
-        };
-
+        let scaleup_factor = get_scaleup_factor(white_level);
+        
         Ok(DngInfo {
             is_le,
             is_converted,

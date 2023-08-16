@@ -5,7 +5,11 @@ fn open_file_by_type(x: &str) -> io::Result<File> {
     let f = match x {
         "arw" | "arw0" => "sample0.ARW",
         "arw1" => "sample1.ARW",
-        "dng" => "sample0.dng",
+        "dng0" => "dng/uncompressed-bayer.dng",
+        "dng1" => "dng/uncompressed-rgb.dng",
+        "dng2" => "dng/lossless-compressed-bayer.dng",
+        "dng3" => "dng/lossless-compressed-rgb.dng",
+        "dng4" => "dng/lossy-compressed.dng",
         _ => panic!("unknown type: {x}"),
     };
     let path = format!("{prefix}{f}");

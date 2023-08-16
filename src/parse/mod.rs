@@ -195,3 +195,14 @@ macro_rules! gen_get {
     };
 }
 pub(crate) use gen_get;
+
+fn get_scaleup_factor(white_level: u16) -> u16 {
+    let mut factor = 0;
+    let mut v = white_level as u32;
+    let max = u16::MAX as u32;
+    while (v << 1) <= max {
+        v <<= 1;
+        factor += 1;
+    }
+    factor
+}
