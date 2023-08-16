@@ -17,8 +17,10 @@ pub(crate) struct DecodingInfo {
     pub(crate) height: usize,
     pub(crate) white_balance: WhiteBalance,
     pub(crate) cfa_pattern: CFAPattern,
+    pub(crate) color_matrix: Option<ColorMatrix>,
 }
 
+#[derive(Copy, Clone)]
 pub struct ColorMatrix {
     pub(crate) matrix: [f32; 9],
     pub(crate) column0: i32x4,
@@ -194,7 +196,7 @@ macro_rules! gen_get {
         }
     };
 }
-pub(crate) use gen_get;
+pub(self) use gen_get;
 
 fn get_scaleup_factor(white_level: u16) -> u16 {
     let mut factor = 0;

@@ -24,6 +24,7 @@ impl Decode for ArwInfo {
             height: self.height,
             white_balance: self.white_balance,
             cfa_pattern: self.cfa_pattern,
+            color_matrix: None
         }
     }
     fn decode_with_preprocess<RS: Read + Seek>(
