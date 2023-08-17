@@ -62,11 +62,29 @@ fn demosaicing_with_postprocess<T: Demosaicing, const N: usize>(
     gamma_lut: &[u16; 65536],
     color_matrix: &ColorMatrix,
 ) -> Box<[u16]> {
-    let mut target = vec![0u16; image_bytes.len() * N];
+    let mut target = vec![0u16; info.width * info.height * N];
     let mut pixel_info = PixelInfo::new(info.width, info.height);
     for (i, v) in target.chunks_exact_mut(N).enumerate() {
         let stat = pixel_info.get_stat_and_update();
         let rgb = T::demosaicing(i, info.width, stat, &image_bytes);
+        let rgb = info.white_balance.fix(rgb);
+        let rgb = color_matrix.shift_color(&rgb);
+        let rgb = color::gamma_correct::<N>(rgb, &gamma_lut);
+        v.copy_from_slice(&rgb);
+    }
+    target.into_boxed_slice()
+}
+
+fn postprocesses<const N: usize>(
+    image_bytes: &[u16],
+    info: &DecodingInfo,
+    gamma_lut: &[u16; 65536],
+    color_matrix: &ColorMatrix,
+) -> Box<[u16]> {
+    let mut target = vec![0u16; info.width * info.height * N];
+    for (i, v) in target.chunks_exact_mut(N).enumerate() {
+        let mut rgb = [0u16; 3];
+        rgb.copy_from_slice(&image_bytes[i * N..i * N + 3]);
         let rgb = info.white_balance.fix(rgb);
         let rgb = color_matrix.shift_color(&rgb);
         let rgb = color::gamma_correct::<N>(rgb, &gamma_lut);
@@ -89,9 +107,21 @@ pub fn extract_image<const N: usize>(
         _ => return Err(Error::UnsupportedRawFile).to_report(),
     };
 
+    // prepare color conversion
+    let gamma_lut = color::gen_gamma_lut(gamma);
+    let mut color_matrix: ColorMatrix = info.color_matrix.unwrap_or(
+        color::data::CAM_XYZ_MAP
+            .get(&model)
+            .ok_or(Error::IsNone)
+            .to_report()?
+            .into(),
+    );
+    color_matrix.update_colorspace(color_space);
+
     let Some(cfa_pattern) = info.cfa_pattern.as_ref() else {
         // is rgb pattern
-        return Ok((image_bytes, info.width, info.height));
+        let image = postprocesses::<N>(&image_bytes, &info, &gamma_lut, &color_matrix);
+        return Ok((image, info.width, info.height));
     };
 
     // safety check
@@ -103,17 +133,6 @@ pub fn extract_image<const N: usize>(
         ))
         .to_report();
     }
-
-    // prepare color conversion
-    let gamma_lut = color::gen_gamma_lut(gamma);
-    let mut color_matrix: ColorMatrix = info.color_matrix.unwrap_or(
-        color::data::CAM_XYZ_MAP
-            .get(&model)
-            .ok_or(Error::IsNone)
-            .to_report()?
-            .into(),
-    );
-    color_matrix.update_colorspace(color_space);
 
     // demosaicing and postprocesses
     let image = match cfa_pattern {

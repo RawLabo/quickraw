@@ -2,7 +2,7 @@ use std::io::{Read, Seek};
 
 use super::{general_16bit_iter, Decode, Preprocess};
 use crate::{
-    parse::{self, arw::ArwInfo, get_bytes, DecodingInfo},
+    parse::{arw::ArwInfo, get_bytes, DecodingInfo},
     tool::bit_reader::BitReader,
     Error, ToReport,
 };

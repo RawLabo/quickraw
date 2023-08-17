@@ -33,12 +33,8 @@ impl Decode for DngInfo {
         mut reader: RS,
     ) -> Result<Box<[u16]>, Report> {
         match (self.compression, self.cfa_pattern.as_ref()) {
-            (1, None) => {
-                // uncompressed rgb
-                todo!()
-            }
             (1, _) => {
-                // uncompressed bayer
+                // uncompressed bayer or uncompressed rgb
                 let strip_bytes =
                     get_bytes(&mut reader, self.strip_addr, self.strip_size).to_report()?;
                 let image = general_16bit_iter(&strip_bytes, self.is_le)

@@ -185,8 +185,12 @@ impl Parse<DngInfo> for DngInfo {
 
         let width = get!(tags[6], u32) as usize;
         let height = get!(tags[7], u32) as usize;
-        let white_level = get!(tags[8], u16);
-        let black_level = if let Some(bl) = exif.get(tags[9]).and_then(|x| x.r64s()) {
+        let white_level = if let Some(wl) = get!(tags[8]).and_then(|x| x.u16s()) {
+            wl[0] as u16
+        } else {
+            get!(tags[8], u16)
+        };
+        let black_level = if let Some(bl) = get!(tags[9]).and_then(|x| x.r64s()) {
             bl[0] as u16
         } else {
             get!(tags[9], u16)
