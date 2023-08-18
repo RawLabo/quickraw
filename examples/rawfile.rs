@@ -10,7 +10,7 @@ fn open_file_by_type(x: &str) -> io::Result<File> {
         "dng2" => "dng/lossless-compressed-bayer.dng",
         "dng3" => "dng/lossless-compressed-rgb.dng",
         "dng4" => "dng/lossy-compressed.dng",
-        _ => panic!("unknown type: {x}"),
+        path => path,
     };
     let path = format!("{prefix}{f}");
     println!("Processing raw file: {}", path);
