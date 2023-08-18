@@ -173,7 +173,7 @@ impl Parse<DngInfo> for DngInfo {
                     let strip_size = get!(tags[1], u32) as usize;
                     (strip_addr, strip_size, [].into(), [].into(), 0, 0)
                 }
-                7 => {
+                7 | 34892 => {
                     let tile_offsets = get!(tags[2] => u32s);
                     let tile_byte_counts = get!(tags[3] => u32s);
                     let tile_width = get!(tags[4], u32);

@@ -25,6 +25,7 @@ impl Decode for ArwInfo {
             white_balance: self.white_balance,
             cfa_pattern: Some(self.cfa_pattern),
             color_matrix: None,
+            is_lossy_jpeg: false
         }
     }
     fn decode_with_preprocess<RS: Read + Seek>(

@@ -26,6 +26,7 @@ impl Decode for DngInfo {
             white_balance: self.white_balance,
             cfa_pattern: self.cfa_pattern,
             color_matrix: Some(self.color_matrix_2),
+            is_lossy_jpeg: self.compression == 34892,
         }
     }
     fn decode_with_preprocess<RS: Read + Seek>(
@@ -50,7 +51,58 @@ impl Decode for DngInfo {
                 // lossless compressed bayer
                 todo!()
             }
+            (34892, _) => {
+                // lossy JPEG
+                let image = self.decode_lossy_jpeg(&mut reader).to_report()?;
+                Ok(image
+                    .into_iter()
+                    .map(|&x| ((x as u16 + 1) << 8).wrapping_sub(1))
+                    .collect())
+            }
             _ => Err(DngError::CompressionTypeNotSupported(self.compression)).to_report(),
         }
+    }
+}
+
+impl DngInfo {
+    fn decode_lossy_jpeg<RS: Read + Seek>(&self, mut reader: RS) -> Result<Box<[u8]>, Report> {
+        let mut image = vec![0u8; self.width * self.height * 3];
+
+        let tile_width = self.tile_width as usize;
+        let tile_height = self.tile_len as usize;
+        let tile_per_row = self.width / tile_width + (self.width % tile_width != 0) as usize;
+        let blank_width = (tile_width * tile_per_row - self.width) * 3;
+
+        for (tile_index, (&addr, &size)) in self
+            .tile_offsets
+            .into_iter()
+            .zip(self.tile_byte_counts.into_iter())
+            .enumerate()
+        {
+            let buffer = get_bytes(&mut reader, addr as u64, size as usize).to_report()?;
+            let mut decoder = zune_jpeg::JpegDecoder::new(&buffer);
+            let tile_rgb = decoder.decode().to_report()?;
+
+            let processed_rows = tile_index / tile_per_row * tile_height;
+            let tile_y_offset = processed_rows * self.width * 3;
+            let tile_x_offset = tile_index % tile_per_row * tile_width * 3;
+
+            for (row_index, data) in tile_rgb.chunks_exact(tile_width * 3).enumerate() {
+                if processed_rows + row_index >= self.height {
+                    continue;
+                }
+
+                let start = row_index * self.width * 3 + tile_x_offset + tile_y_offset;
+
+                if (tile_index + 1) % tile_per_row == 0 {
+                    (&mut image[start..start + tile_width * 3 - blank_width])
+                        .copy_from_slice(&data[..tile_width * 3 - blank_width]);
+                } else {
+                    (&mut image[start..start + tile_width * 3]).copy_from_slice(data);
+                }
+            }
+        }
+
+        Ok(image.into_boxed_slice())
     }
 }

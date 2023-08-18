@@ -18,6 +18,7 @@ pub(crate) struct DecodingInfo {
     pub(crate) white_balance: WhiteBalance,
     pub(crate) cfa_pattern: Option<CFAPattern>,
     pub(crate) color_matrix: Option<ColorMatrix>,
+    pub(crate) is_lossy_jpeg: bool,
 }
 
 #[derive(Copy, Clone)]

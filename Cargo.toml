@@ -15,6 +15,7 @@ erreport = "0.2"
 phf = { version = "0.11", features = ["macros"] }
 quickexif = { version = "0.2.0-alpha.5" }
 wide = "0.7"
+zune-jpeg = "0.3.17"
 
 [dev-dependencies]
 env_logger = "0.10"
