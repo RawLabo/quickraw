@@ -84,7 +84,7 @@ fn postprocesses<const N: usize>(
     let mut target = vec![0u16; info.width * info.height * N];
     for (i, v) in target.chunks_exact_mut(N).enumerate() {
         let mut rgb = [0u16; 3];
-        rgb.copy_from_slice(&image_bytes[i * N..i * N + 3]);
+        rgb.copy_from_slice(&image_bytes[i * 3..i * 3 + 3]);
         let rgb = info.white_balance.fix(rgb);
         let rgb = color_matrix.shift_color(&rgb);
         let rgb = color::gamma_correct::<N>(rgb, &gamma_lut);
