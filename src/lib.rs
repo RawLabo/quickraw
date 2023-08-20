@@ -120,12 +120,8 @@ pub fn extract_image<const N: usize>(
 
     let Some(cfa_pattern) = info.cfa_pattern.as_ref() else {
         // is rgb pattern
-        return if info.is_lossy_jpeg {
-            Ok((image_bytes, info.width, info.height))
-        } else {
-            let image = postprocesses::<N>(&image_bytes, &info, &gamma_lut, &color_matrix);
-            Ok((image, info.width, info.height))
-        };
+        let image = postprocesses::<N>(&image_bytes, &info, &gamma_lut, &color_matrix);
+        return Ok((image, info.width, info.height));
     };
 
     // safety check

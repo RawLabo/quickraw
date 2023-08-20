@@ -26,7 +26,6 @@ impl Decode for DngInfo {
             white_balance: self.white_balance,
             cfa_pattern: self.cfa_pattern,
             color_matrix: Some(self.color_matrix_2),
-            is_lossy_jpeg: self.compression == 34892,
         }
     }
     fn decode_with_preprocess<RS: Read + Seek>(
