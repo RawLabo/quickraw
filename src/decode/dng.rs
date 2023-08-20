@@ -8,6 +8,7 @@ use crate::{
 };
 use erreport::Report;
 use std::io::{Read, Seek};
+use wide::u32x4;
 
 impl Preprocess for DngInfo {
     fn black_level_substract(&self, x: u16) -> u16 {
@@ -53,22 +54,18 @@ impl Decode for DngInfo {
             (34892, _) => {
                 // lossy JPEG
                 let image = self.decode_lossy_jpeg(&mut reader).to_report()?;
-                use wide::f32x4;
-                let x0 = f32x4::from(self.map_polynomial[0]);
-                let x1 = f32x4::from(self.map_polynomial[1]);
-                let x2 = f32x4::from(self.map_polynomial[2]);
-                let x3 = f32x4::from(self.map_polynomial[3]);
-                let scaleup = f32x4::splat(65535.);
+                let x0 = u32x4::from(self.map_polynomial[0]);
+                let x1 = u32x4::from(self.map_polynomial[1]);
+                let x2 = u32x4::from(self.map_polynomial[2]);
+                let x3 = u32x4::from(self.map_polynomial[3]);
 
                 let result = image
                     .chunks_exact(3)
                     .flat_map(|rgb| {
-                        let (r, g, b) = (rgb[0], rgb[1], rgb[2]);
-                        let rgb =
-                            f32x4::from([r as f32 / 255., g as f32 / 255., b as f32 / 255., 0.]);
-                        let result =
-                            (x0 + x1 * rgb + x2 * rgb * rgb + x3 * rgb * rgb * rgb) * scaleup;
-                        let [r, g, b, _] = result.to_array();
+                        let rgb = u32x4::from([rgb[0] as u32, rgb[1] as u32, rgb[2] as u32, 0]);
+                        let result: u32x4 =
+                            (x0 + x1 * rgb + x2 * rgb * rgb + x3 * rgb * rgb * rgb) >> 16;
+                        let &[r, g, b, _] = result.as_array_ref();
                         [r as u16, g as u16, b as u16]
                     })
                     .collect();

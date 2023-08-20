@@ -77,7 +77,7 @@ pub struct DngInfo {
     pub white_balance: WhiteBalance,
     pub color_matrix_1: ColorMatrix,
     pub color_matrix_2: ColorMatrix,
-    pub map_polynomial: [[f32; 4]; 4],
+    pub map_polynomial: [[u32; 4]; 4],
 
     pub compression: u16,
     pub strip_addr: u64,
@@ -201,7 +201,7 @@ impl Parse<DngInfo> for DngInfo {
 
         let scaleup_factor = get_scaleup_factor(white_level);
 
-        let mut map_polynomial = [[0f32; 4]; 4];
+        let mut map_polynomial = [[0u32; 4]; 4];
         if let Some(opcodelist) = get!(opcodelist2) {
             let mut reader = Cursor::new(opcodelist.raw());
             let mut op_count = reader.u32().to_report()?;
@@ -217,10 +217,10 @@ impl Parse<DngInfo> for DngInfo {
                         continue;
                     }
 
-                    map_polynomial[0][plane_id] = reader.f64().to_report()? as f32;
-                    map_polynomial[1][plane_id] = reader.f64().to_report()? as f32;
-                    map_polynomial[2][plane_id] = reader.f64().to_report()? as f32;
-                    map_polynomial[3][plane_id] = reader.f64().to_report()? as f32;
+                    map_polynomial[0][plane_id] = (reader.f64().to_report()? * 4294967296.) as u32;
+                    map_polynomial[1][plane_id] = (reader.f64().to_report()? * 4294967296. / 255.) as u32;
+                    map_polynomial[2][plane_id] = (reader.f64().to_report()? * 4294967296. / 255. / 255.) as u32;
+                    map_polynomial[3][plane_id] = (reader.f64().to_report()? * 4294967296. / 255. / 255. / 255.) as u32;
 
                     plane_id += 1;
                     if plane_id == 3 {
