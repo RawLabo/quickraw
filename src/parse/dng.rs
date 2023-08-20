@@ -1,7 +1,7 @@
 use super::{CFAPattern, ColorMatrix, Parse, WhiteBalance};
 use crate::{parse::get_scaleup_factor, Error, ToReport};
 use erreport::Report;
-use std::io::{BufReader, Read, Seek};
+use std::io::{self, BufReader, Cursor, Read, Seek};
 
 #[derive(thiserror::Error, Debug)]
 pub(crate) enum DngError {
@@ -51,6 +51,7 @@ mod dng_rule {
             0x0143 tile_len1
             0xc61d white_level1
             0xc61a black_level1
+            0xc741 opcodelist2
         }
         0 -> 0x014a -> 100 {
             0x0100 width2
@@ -76,6 +77,7 @@ pub struct DngInfo {
     pub white_balance: WhiteBalance,
     pub color_matrix_1: ColorMatrix,
     pub color_matrix_2: ColorMatrix,
+    pub map_polynomial: [[f32; 4]; 4],
 
     pub compression: u16,
     pub strip_addr: u64,
@@ -199,6 +201,36 @@ impl Parse<DngInfo> for DngInfo {
 
         let scaleup_factor = get_scaleup_factor(white_level);
 
+        let mut map_polynomial = [[0f32; 4]; 4];
+        if let Some(opcodelist) = get!(opcodelist2) {
+            let mut reader = Cursor::new(opcodelist.raw());
+            let mut op_count = reader.u32().to_report()?;
+            let mut plane_id = 0;
+            while op_count > 0 {
+                let op = reader.u32().to_report()?;
+                if op == 8 {
+                    // is MapPolynomial
+                    reader.shift::<44>().to_report()?;
+                    let degree = reader.u32().to_report()?;
+                    if degree != 3 {
+                        // currently support degree = 3 only
+                        continue;
+                    }
+
+                    map_polynomial[0][plane_id] = reader.f64().to_report()? as f32;
+                    map_polynomial[1][plane_id] = reader.f64().to_report()? as f32;
+                    map_polynomial[2][plane_id] = reader.f64().to_report()? as f32;
+                    map_polynomial[3][plane_id] = reader.f64().to_report()? as f32;
+
+                    plane_id += 1;
+                    if plane_id == 3 {
+                        break;
+                    }
+                }
+                op_count -= 1;
+            }
+        }
+
         Ok(DngInfo {
             is_le,
             is_converted,
@@ -219,6 +251,31 @@ impl Parse<DngInfo> for DngInfo {
             thumbnail,
             color_matrix_1,
             color_matrix_2,
+            map_polynomial,
         })
+    }
+}
+
+trait Read4Opcode {
+    fn u32(&mut self) -> Result<u32, io::Error>;
+    fn f64(&mut self) -> Result<f64, io::Error>;
+    fn shift<const N: usize>(&mut self) -> Result<(), io::Error>;
+}
+
+impl<T: AsRef<[u8]>> Read4Opcode for Cursor<T> {
+    fn u32(&mut self) -> Result<u32, io::Error> {
+        let mut bytes = [0u8; 4];
+        self.read_exact(&mut bytes)?;
+        Ok(u32::from_be_bytes(bytes))
+    }
+    fn f64(&mut self) -> Result<f64, io::Error> {
+        let mut bytes = [0u8; 8];
+        self.read_exact(&mut bytes)?;
+        Ok(f64::from_be_bytes(bytes))
+    }
+    fn shift<const N: usize>(&mut self) -> Result<(), io::Error> {
+        let mut bytes = [0u8; N];
+        self.read_exact(&mut bytes)?;
+        Ok(())
     }
 }

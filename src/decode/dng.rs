@@ -53,10 +53,26 @@ impl Decode for DngInfo {
             (34892, _) => {
                 // lossy JPEG
                 let image = self.decode_lossy_jpeg(&mut reader).to_report()?;
-                Ok(image
-                    .into_iter()
-                    .map(|&x| ((x as u16 + 1) << 8).wrapping_sub(1))
-                    .collect())
+                use wide::f32x4;
+                let x0 = f32x4::from(self.map_polynomial[0]);
+                let x1 = f32x4::from(self.map_polynomial[1]);
+                let x2 = f32x4::from(self.map_polynomial[2]);
+                let x3 = f32x4::from(self.map_polynomial[3]);
+                let scaleup = f32x4::splat(65535.);
+
+                let result = image
+                    .chunks_exact(3)
+                    .flat_map(|rgb| {
+                        let (r, g, b) = (rgb[0], rgb[1], rgb[2]);
+                        let rgb =
+                            f32x4::from([r as f32 / 255., g as f32 / 255., b as f32 / 255., 0.]);
+                        let result =
+                            (x0 + x1 * rgb + x2 * rgb * rgb + x3 * rgb * rgb * rgb) * scaleup;
+                        let [r, g, b, _] = result.to_array();
+                        [r as u16, g as u16, b as u16]
+                    })
+                    .collect();
+                Ok(result)
             }
             _ => Err(DngError::CompressionTypeNotSupported(self.compression)).to_report(),
         }
