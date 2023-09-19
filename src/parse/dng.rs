@@ -83,7 +83,7 @@ pub struct DngInfo {
     pub strip_addr: u64,
     pub strip_size: usize,
     pub tile_offsets: Box<[u32]>,
-    pub tile_byte_counts: Box<[u32]>,
+    pub tiles_sizes: Box<[u32]>,
     pub tile_width: u32,
     pub tile_len: u32,
     pub thumbnail: Option<(u64, usize)>,
@@ -168,7 +168,7 @@ impl Parse<DngInfo> for DngInfo {
             )
         };
 
-        let (strip_addr, strip_size, tile_offsets, tile_byte_counts, tile_width, tile_len) =
+        let (strip_addr, strip_size, tile_offsets, tiles_sizes, tile_width, tile_len) =
             match compression {
                 1 => {
                     let strip_addr = get!(tags[0], u32) as u64;
@@ -245,7 +245,7 @@ impl Parse<DngInfo> for DngInfo {
             strip_addr,
             strip_size,
             tile_offsets,
-            tile_byte_counts,
+            tiles_sizes,
             tile_width,
             tile_len,
             thumbnail,

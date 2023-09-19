@@ -4,6 +4,7 @@ use crate::{
         dng::{DngError, DngInfo},
         get_bytes, DecodingInfo,
     },
+    tool::{bit_reader::BitReader, huffman},
     ToReport,
 };
 use erreport::Report;
@@ -45,11 +46,12 @@ impl Decode for DngInfo {
             }
             (7, None) => {
                 // lossless compressed rgb
+                println!("compressed rgb");
                 todo!()
             }
             (7, _) => {
                 // lossless compressed bayer
-                todo!()
+                self.decode_lossless_bayer(&mut reader)
             }
             (34892, _) => {
                 // lossy JPEG
@@ -77,6 +79,27 @@ impl Decode for DngInfo {
 }
 
 impl DngInfo {
+    fn decode_lossless_bayer<RS: Read + Seek>(&self, mut reader: RS) -> Result<Box<[u16]>, Report> {
+        for (addr, size) in self
+            .tile_offsets
+            .into_iter()
+            .zip(self.tiles_sizes.into_iter())
+        {
+            let strip_bytes = get_bytes(&mut reader, *addr as u64, *size as usize).to_report()?;
+            let jpeg = quickexif::jpeg::JPEG::new(&strip_bytes).to_report()?;
+            let mut bit_reader = BitReader::new(jpeg.sos.body);
+            let base = 1 << (jpeg.sof.precision - 1);
+            let huffman0 = huffman::HuffmanDecoder::from_dht(&jpeg.dht[0]);
+            let huffman1 = huffman::HuffmanDecoder::from_dht(&jpeg.dht[1]);
+
+            let mut image = vec![0u16; self.width * self.height];
+            image[0] = (base + huffman0.read_next(&mut bit_reader).to_report()?) as u16;
+            image[1] = (base + huffman1.read_next(&mut bit_reader).to_report()?) as u16;
+
+            break;
+        }
+        todo!()
+    }
     fn decode_lossy_jpeg<RS: Read + Seek>(&self, mut reader: RS) -> Result<Box<[u8]>, Report> {
         let mut image = vec![0u8; self.width * self.height * 3];
 
@@ -88,7 +111,7 @@ impl DngInfo {
         for (tile_index, (&addr, &size)) in self
             .tile_offsets
             .into_iter()
-            .zip(self.tile_byte_counts.into_iter())
+            .zip(self.tiles_sizes.into_iter())
             .enumerate()
         {
             let buffer = get_bytes(&mut reader, addr as u64, size as usize).to_report()?;

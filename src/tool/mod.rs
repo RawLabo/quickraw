@@ -1,4 +1,5 @@
 pub(crate) mod bit_reader;
+pub(crate) mod huffman;
 pub(crate) mod tone_curve;
 
 pub(crate) fn u16(x: &[u8], is_le: bool) -> u16 {
@@ -9,4 +10,3 @@ pub(crate) fn u16(x: &[u8], is_le: bool) -> u16 {
         u16::from_be_bytes(bytes)
     }
 }
-

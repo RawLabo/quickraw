@@ -19,6 +19,20 @@ impl<'a> BitReader<'a> {
     }
 
     /// bits must be less than 32
+    pub(crate) fn check_bits_be(&mut self, bits: usize) -> Result<u32, Report> {
+        let position = self.position;
+        let cache = self.cache;
+        let cached_bits = self.cached_bits;
+
+        let result = self.read_bits_be(bits).to_report()?;
+        self.position = position;
+        self.cache = cache;
+        self.cached_bits = cached_bits;
+
+        Ok(result)
+    }
+
+    /// bits must be less than 32
     pub(crate) fn read_bits_be(&mut self, bits: usize) -> Result<u32, Report> {
         while self.cached_bits < bits {
             let Some(byte) = self.source.get(self.position) else {
