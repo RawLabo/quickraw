@@ -14,11 +14,15 @@ pub(crate) struct HuffmanDecoder {
 
 impl HuffmanDecoder {
     pub(crate) fn read_next(&self, bit_reader: &mut BitReader) -> Result<i32, Report> {
-        let v = bit_reader.check_bits_be(self.max_bits).to_report()?;
+        let v = bit_reader.check_bits_be(self.max_bits, true).to_report()?;
         let (symbol, bits) = self.lut[v as usize];
-        bit_reader.read_bits_be(bits as usize).to_report()?;
+        bit_reader.read_bits_be(bits as usize, true).to_report()?;
 
-        let mut diff = bit_reader.read_bits_be(symbol as usize).to_report()? as i32;
+        if symbol == 0 {
+            return Ok(0);
+        }
+
+        let mut diff = bit_reader.read_bits_be(symbol as usize, true).to_report()? as i32;
         if diff >> (symbol - 1) == 0 {
             // is in the left negative range port of SSSS
             diff -= (1 << symbol) - 1;
@@ -27,14 +31,15 @@ impl HuffmanDecoder {
         Ok(diff)
     }
     pub(crate) fn from_dht(dht: &quickexif::jpeg::DHT) -> Self {
-        let mut max_bits = 0;
+        let mut max_bits = 16;
         loop {
-            max_bits += 1;
+            max_bits -= 1;
             match dht.huff_size.get(max_bits) {
-                Some(0) | None => break,
-                Some(_) => continue,
+                Some(0) => continue,
+                Some(_) | None => break,
             }
         }
+        max_bits += 1;
 
         let mut lut = vec![(0, 0); 1 << max_bits];
         let mut index = 0;

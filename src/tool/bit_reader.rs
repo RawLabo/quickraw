@@ -18,13 +18,17 @@ impl<'a> BitReader<'a> {
         }
     }
 
-    /// bits must be less than 32
-    pub(crate) fn check_bits_be(&mut self, bits: usize) -> Result<u32, Report> {
+    /// bits must be greater than 0 and less than 32
+    pub(crate) fn check_bits_be(
+        &mut self,
+        bits: usize,
+        skip_00_after_ff: bool,
+    ) -> Result<u32, Report> {
         let position = self.position;
         let cache = self.cache;
         let cached_bits = self.cached_bits;
 
-        let result = self.read_bits_be(bits).to_report()?;
+        let result = self.read_bits_be(bits, skip_00_after_ff).to_report()?;
         self.position = position;
         self.cache = cache;
         self.cached_bits = cached_bits;
@@ -32,18 +36,28 @@ impl<'a> BitReader<'a> {
         Ok(result)
     }
 
-    /// bits must be less than 32
-    pub(crate) fn read_bits_be(&mut self, bits: usize) -> Result<u32, Report> {
+    /// bits must be greater than 0 and less than 32
+    pub(crate) fn read_bits_be(
+        &mut self,
+        bits: usize,
+        skip_00_after_ff: bool,
+    ) -> Result<u32, Report> {
         while self.cached_bits < bits {
-            let Some(byte) = self.source.get(self.position) else {
-                return Err(Error::IsNone).to_report()
+            let byte = if let Some(byte) = self.source.get(self.position) {
+                byte
+            } else {
+                &0
             };
 
             self.cache <<= 8;
             self.cache |= *byte as u32;
             self.cached_bits += 8;
 
-            self.position += 1;
+            if skip_00_after_ff && *byte == 0xff && Some(&0) == self.source.get(self.position + 1) {
+                self.position += 2;
+            } else {
+                self.position += 1;
+            }
         }
 
         let preserved_bits = self.cached_bits - bits;
@@ -58,7 +72,7 @@ impl<'a> BitReader<'a> {
         Ok(result)
     }
 
-    /// bits must be less than 32
+    /// bits must be greater than 0 and less than 32
     pub(crate) fn read_bits_le(&mut self, bits: usize) -> Result<u32, Report> {
         while self.cached_bits < bits {
             let Some(byte) = self.source.get(self.position) else {
@@ -159,8 +173,8 @@ mod tests {
     fn test_be() -> Result<(), Box<dyn std::error::Error>> {
         {
             let mut reader = BitReader::new(&DATA);
-            reader.read_bits_be(11)?;
-            let r0 = reader.read_bits_be(7)?;
+            reader.read_bits_be(11, false)?;
+            let r0 = reader.read_bits_be(7, false)?;
 
             let r1 = bit_read_be(&DATA, 11, 7);
 
@@ -169,9 +183,9 @@ mod tests {
 
         {
             let mut reader = BitReader::new(&DATA);
-            reader.read_bits_be(20)?;
-            reader.read_bits_be(20)?;
-            let r0 = reader.read_bits_be(7)?;
+            reader.read_bits_be(20, false)?;
+            reader.read_bits_be(20, false)?;
+            let r0 = reader.read_bits_be(7, false)?;
 
             let r1 = bit_read_be(&DATA, 40, 7);
 
