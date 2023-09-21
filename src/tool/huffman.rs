@@ -1,7 +1,3 @@
-use erreport::Report;
-
-use crate::ToReport;
-
 use super::bit_reader::BitReader;
 
 #[derive(Debug)]
@@ -13,22 +9,22 @@ pub(crate) struct HuffmanDecoder {
 }
 
 impl HuffmanDecoder {
-    pub(crate) fn read_next(&self, bit_reader: &mut BitReader) -> Result<i32, Report> {
-        let v = bit_reader.check_bits_be(self.max_bits, true).to_report()?;
+    pub(crate) fn read_next(&self, bit_reader: &mut BitReader) -> i32 {
+        let v = bit_reader.check_bits_be(self.max_bits, true);
         let (symbol, bits) = self.lut[v as usize];
-        bit_reader.read_bits_be(bits as usize, true).to_report()?;
+        bit_reader.read_bits_be(bits as usize, true);
 
         if symbol == 0 {
-            return Ok(0);
+            return 0;
         }
 
-        let mut diff = bit_reader.read_bits_be(symbol as usize, true).to_report()? as i32;
+        let mut diff = bit_reader.read_bits_be(symbol as usize, true) as i32;
         if diff >> (symbol - 1) == 0 {
             // is in the left negative range port of SSSS
             diff -= (1 << symbol) - 1;
         }
 
-        Ok(diff)
+        diff
     }
     pub(crate) fn from_dht(dht: &quickexif::jpeg::DHT) -> Self {
         let mut max_bits = 16;

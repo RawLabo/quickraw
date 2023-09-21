@@ -91,14 +91,14 @@ impl DngInfo {
         let huffman1 = huffman::HuffmanDecoder::from_dht(&jpeg.dht[1]);
 
         let mut image = vec![0u16; self.tile_width as usize * self.tile_len as usize];
-        image[0] = (base + huffman0.read_next(&mut bit_reader).to_report()?) as u16;
-        image[1] = (base + huffman1.read_next(&mut bit_reader).to_report()?) as u16;
+        image[0] = (base + huffman0.read_next(&mut bit_reader)) as u16;
+        image[1] = (base + huffman1.read_next(&mut bit_reader)) as u16;
 
         let tile_width = self.tile_width as usize;
         for index in (2..image.len()).step_by(2) {
             let col = index % tile_width;
-            let diff0 = huffman0.read_next(&mut bit_reader).to_report()?;
-            let diff1 = huffman1.read_next(&mut bit_reader).to_report()?;
+            let diff0 = huffman0.read_next(&mut bit_reader);
+            let diff1 = huffman1.read_next(&mut bit_reader);
 
             let (base0, base1) = if col == 0 {
                 (image[index - tile_width], image[index + 1 - tile_width])
