@@ -44,9 +44,6 @@ impl HuffmanDecoder {
         let mut lut = vec![(0, 0); 1 << max_bits];
         let mut index = 0;
         for (len, vals) in dht.huff_vals.iter().enumerate() {
-            if len == 0 {
-                continue;
-            }
             for val in vals.iter() {
                 for _ in 0..(1 << (max_bits - len - 1)) {
                     lut[index] = (*val, 1 + len as u8);
