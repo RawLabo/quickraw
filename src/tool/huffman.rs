@@ -11,15 +11,15 @@ pub(crate) struct HuffmanDecoder {
 impl HuffmanDecoder {
     #[inline(always)]
     pub(crate) fn read_next(&self, bit_reader: &mut BitReader) -> i32 {
-        let v = bit_reader.check_bits_be(self.max_bits, true);
+        let v = bit_reader.check_bits_jpeg(self.max_bits);
         let (symbol, bits) = self.lut[v as usize];
-        bit_reader.read_bits_be(bits as usize, true);
+        bit_reader.read_bits_jpeg(bits as usize);
 
         if symbol == 0 {
             return 0;
         }
 
-        let mut diff = bit_reader.read_bits_be(symbol as usize, true) as i32;
+        let mut diff = bit_reader.read_bits_jpeg(symbol as usize) as i32;
         if diff >> (symbol - 1) == 0 {
             // is in the left negative range port of SSSS
             diff -= (1 << symbol) - 1;
