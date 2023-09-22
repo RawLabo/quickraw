@@ -11,9 +11,9 @@ pub(crate) struct HuffmanDecoder {
 impl HuffmanDecoder {
     #[inline(always)]
     pub(crate) fn read_next(&self, bit_reader: &mut BitReader) -> i32 {
-        let v = bit_reader.check_bits_jpeg(self.max_bits);
+        let v = bit_reader.read_bits_jpeg(self.max_bits);
         let (symbol, bits) = self.lut[v as usize];
-        bit_reader.read_bits_jpeg(bits as usize);
+        bit_reader.put_back_bits_be(v, self.max_bits - bits as usize);
 
         if symbol == 0 {
             return 0;
