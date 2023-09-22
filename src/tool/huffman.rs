@@ -9,6 +9,7 @@ pub(crate) struct HuffmanDecoder {
 }
 
 impl HuffmanDecoder {
+    #[inline(always)]
     pub(crate) fn read_next(&self, bit_reader: &mut BitReader) -> i32 {
         let v = bit_reader.check_bits_be(self.max_bits, true);
         let (symbol, bits) = self.lut[v as usize];

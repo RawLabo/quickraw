@@ -17,6 +17,7 @@ impl<'a> BitReader<'a> {
 
     /// bits must be greater than 0 and less than 32
     /// it will keep reading out 0 after it's finished
+    #[inline(always)]
     pub(crate) fn check_bits_be(&mut self, bits: usize, skip_00_after_ff: bool) -> u32 {
         let position = self.position;
         let cache = self.cache;
@@ -32,6 +33,7 @@ impl<'a> BitReader<'a> {
 
     /// bits must be greater than 0 and less than 32
     /// it will keep reading out 0 after it's finished
+    #[inline(always)]
     pub(crate) fn read_bits_be(&mut self, bits: usize, skip_xx_after_ff: bool) -> u32 {
         while self.cached_bits < bits {
             let byte = if let Some(byte) = self.source.get(self.position) {

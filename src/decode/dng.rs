@@ -51,9 +51,11 @@ impl Decode for DngInfo {
             }
             (7, _) => {
                 // lossless compressed bayer
-                let image = self.decode_lossless_bayer(&mut reader).to_report()?;
-                let image = image.into_iter().map(|&v| self.bl_then_wl(v)).collect();
-                Ok(image)
+                let mut image = self.decode_lossless_bayer(&mut reader).to_report()?;
+                for pixel in image.iter_mut() {
+                    *pixel = self.bl_then_wl(*pixel);
+                }
+                Ok(image.into_boxed_slice())
             }
             (34892, _) => {
                 // lossy JPEG
@@ -81,44 +83,15 @@ impl Decode for DngInfo {
 }
 
 impl DngInfo {
-    fn decode_tile(&self, bytes: &[u8]) -> Result<Vec<u16>, Report> {
-        let jpeg = quickexif::jpeg::JPEG::new(&bytes).to_report()?;
-        let mut bit_reader = BitReader::new(jpeg.sos.body);
-        let base = 1 << (jpeg.sof.precision - 1);
-
-        // lossless jpeg data in dng for bayer sensor are mostly encoded with two components
-        let huffman0 = huffman::HuffmanDecoder::from_dht(&jpeg.dht[0]);
-        let huffman1 = huffman::HuffmanDecoder::from_dht(&jpeg.dht[1]);
-
-        let mut image = vec![0u16; self.tile_width as usize * self.tile_len as usize];
-        image[0] = (base + huffman0.read_next(&mut bit_reader)) as u16;
-        image[1] = (base + huffman1.read_next(&mut bit_reader)) as u16;
-
-        let tile_width = self.tile_width as usize;
-        for index in (2..image.len()).step_by(2) {
-            let col = index % tile_width;
-            let diff0 = huffman0.read_next(&mut bit_reader);
-            let diff1 = huffman1.read_next(&mut bit_reader);
-
-            let (base0, base1) = if col == 0 {
-                (image[index - tile_width], image[index + 1 - tile_width])
-            } else {
-                (image[index - 2], image[index - 1])
-            };
-
-            image[index] = (base0 as i32 + diff0) as u16;
-            image[index + 1] = (base1 as i32 + diff1) as u16;
-        }
-
-        Ok(image)
-    }
-    fn decode_lossless_bayer<RS: Read + Seek>(&self, mut reader: RS) -> Result<Box<[u16]>, Report> {
+    fn decode_lossless_bayer<RS: Read + Seek>(&self, mut reader: RS) -> Result<Vec<u16>, Report> {
         let mut image = vec![0u16; self.width * self.height];
 
         let tile_width = self.tile_width as usize;
         let tile_height = self.tile_len as usize;
-        let tile_per_row = self.width / tile_width + (self.width % tile_width != 0) as usize;
-        let blank_width = tile_width * tile_per_row - self.width;
+        let tiles_per_row = self.width / tile_width + (self.width % tile_width != 0) as usize;
+        let tiles_per_col = self.height / tile_height + (self.height % tile_height != 0) as usize;
+        let last_tile_width = self.width + tile_width - tile_width * tiles_per_row;
+        let last_tile_height = self.height + tile_height - tile_height * tiles_per_col;
 
         for (tile_index, (&addr, &size)) in self
             .tile_offsets
@@ -126,38 +99,69 @@ impl DngInfo {
             .zip(self.tiles_sizes.into_iter())
             .enumerate()
         {
+            let processing_row_num = tile_index / tiles_per_row * tile_height;
+            let tile_y_offset = processing_row_num * self.width;
+            let tile_x_offset = tile_index % tiles_per_row * tile_width;
+            let start_offset = tile_y_offset + tile_x_offset;
+            let actual_tile_width = if (tile_index + 1) % tiles_per_row == 0 {
+                last_tile_width
+            } else {
+                tile_width
+            };
+            let actual_tile_height = if processing_row_num + tile_height >= self.height {
+                last_tile_height
+            } else {
+                tile_height
+            };
+
             let buffer = get_bytes(&mut reader, addr as u64, size as usize).to_report()?;
-            let tile_image = self.decode_tile(&buffer).to_report()?;
+            // Lossless JPEG decoding
+            let jpeg = quickexif::jpeg::JPEG::new(&buffer).to_report()?;
+            let mut bit_reader = BitReader::new(jpeg.sos.body);
+            let base = 1 << (jpeg.sof.precision - 1);
 
-            let processed_rows = tile_index / tile_per_row * tile_height;
-            let tile_y_offset = processed_rows * self.width;
-            let tile_x_offset = tile_index % tile_per_row * tile_width;
+            // lossless jpeg data in dng for bayer sensor are mostly encoded with two components
+            let huffman0 = huffman::HuffmanDecoder::from_dht(&jpeg.dht[0]);
+            let huffman1 = huffman::HuffmanDecoder::from_dht(&jpeg.dht[1]);
 
-            for (row_index, data) in tile_image.chunks_exact(tile_width).enumerate() {
-                if processed_rows + row_index >= self.height {
-                    continue;
-                }
+            let mut diffs = vec![0i32; tile_width * tile_height];
+            for pixels in diffs.chunks_exact_mut(2) {
+                pixels[0] = huffman0.read_next(&mut bit_reader);
+                pixels[1] = huffman1.read_next(&mut bit_reader);
+            }
 
-                let start = row_index * self.width + tile_x_offset + tile_y_offset;
+            // cache for first and current two values in row
+            let mut cache = [base; 4];
+            for tile_row in 0..actual_tile_height {
+                cache[0] += diffs[tile_row * tile_width];
+                cache[1] += diffs[tile_row * tile_width + 1];
+                cache[2] = cache[0];
+                cache[3] = cache[1];
 
-                if (tile_index + 1) % tile_per_row == 0 {
-                    (&mut image[start..start + tile_width - blank_width])
-                        .copy_from_slice(&data[..tile_width - blank_width]);
-                } else {
-                    (&mut image[start..start + tile_width]).copy_from_slice(data);
+                let offset = start_offset + tile_row * self.width;
+                image[offset] = cache[2] as u16;
+                image[offset + 1] = cache[3] as u16;
+
+                for tile_col in (2..actual_tile_width).step_by(2) {
+                    cache[2] += diffs[tile_row * tile_width + tile_col];
+                    cache[3] += diffs[tile_row * tile_width + tile_col + 1];
+
+                    let offset = start_offset + tile_row * self.width + tile_col;
+                    image[offset] = cache[2] as u16;
+                    image[offset + 1] = cache[3] as u16;
                 }
             }
         }
 
-        Ok(image.into_boxed_slice())
+        Ok(image)
     }
     fn decode_lossy_jpeg<RS: Read + Seek>(&self, mut reader: RS) -> Result<Box<[u8]>, Report> {
         let mut image = vec![0u8; self.width * self.height * 3];
 
         let tile_width = self.tile_width as usize;
         let tile_height = self.tile_len as usize;
-        let tile_per_row = self.width / tile_width + (self.width % tile_width != 0) as usize;
-        let blank_width = (tile_width * tile_per_row - self.width) * 3;
+        let tiles_per_row = self.width / tile_width + (self.width % tile_width != 0) as usize;
+        let blank_width = (tile_width * tiles_per_row - self.width) * 3;
 
         for (tile_index, (&addr, &size)) in self
             .tile_offsets
@@ -169,18 +173,18 @@ impl DngInfo {
             let mut decoder = zune_jpeg::JpegDecoder::new(&buffer);
             let tile_rgb = decoder.decode().to_report()?;
 
-            let processed_rows = tile_index / tile_per_row * tile_height;
-            let tile_y_offset = processed_rows * self.width * 3;
-            let tile_x_offset = tile_index % tile_per_row * tile_width * 3;
+            let processing_row_num = tile_index / tiles_per_row * tile_height;
+            let tile_y_offset = processing_row_num * self.width * 3;
+            let tile_x_offset = tile_index % tiles_per_row * tile_width * 3;
 
             for (row_index, data) in tile_rgb.chunks_exact(tile_width * 3).enumerate() {
-                if processed_rows + row_index >= self.height {
-                    continue;
+                if processing_row_num + row_index >= self.height {
+                    break;
                 }
 
                 let start = row_index * self.width * 3 + tile_x_offset + tile_y_offset;
 
-                if (tile_index + 1) % tile_per_row == 0 {
+                if (tile_index + 1) % tiles_per_row == 0 {
                     (&mut image[start..start + tile_width * 3 - blank_width])
                         .copy_from_slice(&data[..tile_width * 3 - blank_width]);
                 } else {
