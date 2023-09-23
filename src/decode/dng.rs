@@ -213,6 +213,7 @@ impl DngInfo {
         let jpeg = quickexif::jpeg::JPEG::new(&buffer).to_report()?;
         let mut bit_reader = BitReader::new(jpeg.sos.body);
         let base = 1 << (jpeg.sof.precision - 1);
+        let predictor = jpeg.sos.ss;
 
         // lossless jpeg data in dng for rgb are mostly encoded with three components
         let huffman0 = huffman::HuffmanDecoder::from_dht(&jpeg.dht[0]);
@@ -242,11 +243,24 @@ impl DngInfo {
             target[offset + 2] = cache[5] as u16;
 
             for tile_col in (3..actual_tile_width).step_by(3) {
-                cache[3] += diffs[tile_row * tile_width * 3 + tile_col];
-                cache[4] += diffs[tile_row * tile_width * 3 + tile_col + 1];
-                cache[5] += diffs[tile_row * tile_width * 3 + tile_col + 2];
-
                 let offset = start_offset + tile_row * self.width * 3 + tile_col;
+
+                match (tile_row, predictor) {
+                    (row, 7) if row > 0 => {
+                        cache[3] = (cache[3] + target[offset - self.width * 3] as i32) / 2
+                            + diffs[tile_row * tile_width * 3 + tile_col];
+                        cache[4] = (cache[4] + target[offset + 1 - self.width * 3] as i32) / 2
+                            + diffs[tile_row * tile_width * 3 + tile_col + 1];
+                        cache[5] = (cache[5] + target[offset + 2 - self.width * 3] as i32) / 2
+                            + diffs[tile_row * tile_width * 3 + tile_col + 2];
+                    }
+                    _ => {
+                        cache[3] += diffs[tile_row * tile_width * 3 + tile_col];
+                        cache[4] += diffs[tile_row * tile_width * 3 + tile_col + 1];
+                        cache[5] += diffs[tile_row * tile_width * 3 + tile_col + 2];
+                    }
+                }
+
                 target[offset] = cache[3] as u16;
                 target[offset + 1] = cache[4] as u16;
                 target[offset + 2] = cache[5] as u16;

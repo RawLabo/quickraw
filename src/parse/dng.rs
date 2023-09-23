@@ -18,9 +18,10 @@ mod dng_rule {
     gen_tags_info!(
         0 {
             0xc717 is_converted
-            0xc621 color_matrix_1 // for apple pro raw
-            0xc622 color_matrix_2 // for normal dng
             0x0112 orientation
+            0xc621 color_matrix_1 
+            0xc622 color_matrix_2 
+            0xc627 analog_balance
             0xc628 white_balance
 
             0x0100 width0
@@ -107,6 +108,8 @@ impl Parse<DngInfo> for DngInfo {
         let is_converted = get!(is_converted).is_some();
         let color_matrix_1: ColorMatrix = get!(color_matrix_1 => r64s).into();
         let color_matrix_2: ColorMatrix = get!(color_matrix_2 => r64s).into();
+        // let analog_balance = get!(analog_balance => r64s);
+        // color_matrix_2.apply_analogbalance(&analog_balance);
 
         let orientation = get!(orientation, u16);
         let white_balance = get!(white_balance => r64s);
@@ -118,7 +121,7 @@ impl Parse<DngInfo> for DngInfo {
 
         let mut thumbnail = None;
         // detect if there is subifd-0
-        let (compression, tags): (u16, [&(u16, u16); 11]) = if let Some(compression) =
+        let (compression, tags): (u16, [&(u16, u16); 12]) = if let Some(compression) =
             get!(compression1)
         {
             // has subifd-0
@@ -147,6 +150,7 @@ impl Parse<DngInfo> for DngInfo {
                     dng_rule::white_level1,
                     dng_rule::black_level1,
                     dng_rule::cfa_pattern1,
+                    dng_rule::bps1,
                 ],
             )
         } else {
@@ -165,6 +169,7 @@ impl Parse<DngInfo> for DngInfo {
                     dng_rule::white_level0,
                     dng_rule::black_level0,
                     dng_rule::cfa_pattern0,
+                    dng_rule::bps0,
                 ],
             )
         };
@@ -206,7 +211,16 @@ impl Parse<DngInfo> for DngInfo {
         };
         let cfa_pattern = get!(tags[10]).map(|x| x.raw().into());
 
-        let scaleup_factor = get_scaleup_factor(white_level);
+        let bps = if let Some(x) = get!(tags[11]).and_then(|x| x.u16s()) {
+            x[0]
+        } else {
+            get!(tags[11], u16)
+        };
+        let scaleup_factor = match (bps, get_scaleup_factor(white_level)) {
+            (16, 0) => 0,
+            (bps, 0) => 16 - bps,
+            (_, wl) => wl,
+        };
 
         let mut map_polynomial = [[0u32; 4]; 4];
         if let Some(opcodelist) = get!(opcodelist2) {
