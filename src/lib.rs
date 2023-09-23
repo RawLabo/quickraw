@@ -109,13 +109,16 @@ pub fn extract_image<const N: usize>(
 
     // prepare color conversion
     let gamma_lut = color::gen_gamma_lut(gamma);
-    let mut color_matrix: ColorMatrix = info.color_matrix.unwrap_or(
+    let mut color_matrix: ColorMatrix = if let Some(cm) = info.color_matrix {
+        cm
+    } else {
         color::data::CAM_XYZ_MAP
             .get(&model)
             .ok_or(Error::IsNone)
             .to_report()?
-            .into(),
-    );
+            .into()
+    };
+
     color_matrix.update_colorspace(color_space);
 
     let Some(cfa_pattern) = info.cfa_pattern.as_ref() else {

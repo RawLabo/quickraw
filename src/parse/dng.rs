@@ -107,6 +107,7 @@ impl Parse<DngInfo> for DngInfo {
         let is_converted = get!(is_converted).is_some();
         let color_matrix_1: ColorMatrix = get!(color_matrix_1 => r64s).into();
         let color_matrix_2: ColorMatrix = get!(color_matrix_2 => r64s).into();
+
         let orientation = get!(orientation, u16);
         let white_balance = get!(white_balance => r64s);
         let white_balance = [
@@ -193,7 +194,13 @@ impl Parse<DngInfo> for DngInfo {
             get!(tags[8], u16)
         };
         let black_level = if let Some(bl) = get!(tags[9]).and_then(|x| x.r64s()) {
-            bl[0] as u16
+            if bl.len() == 0 {
+                get!(tags[9])
+                    .and_then(|x| x.u16s())
+                    .unwrap_or(Box::new([0]))[0]
+            } else {
+                bl[0] as u16
+            }
         } else {
             get!(tags[9], u16)
         };
@@ -218,9 +225,12 @@ impl Parse<DngInfo> for DngInfo {
                     }
 
                     map_polynomial[0][plane_id] = (reader.f64().to_report()? * 4294967296.) as u32;
-                    map_polynomial[1][plane_id] = (reader.f64().to_report()? * 4294967296. / 255.) as u32;
-                    map_polynomial[2][plane_id] = (reader.f64().to_report()? * 4294967296. / 255. / 255.) as u32;
-                    map_polynomial[3][plane_id] = (reader.f64().to_report()? * 4294967296. / 255. / 255. / 255.) as u32;
+                    map_polynomial[1][plane_id] =
+                        (reader.f64().to_report()? * 4294967296. / 255.) as u32;
+                    map_polynomial[2][plane_id] =
+                        (reader.f64().to_report()? * 4294967296. / 255. / 255.) as u32;
+                    map_polynomial[3][plane_id] =
+                        (reader.f64().to_report()? * 4294967296. / 255. / 255. / 255.) as u32;
 
                     plane_id += 1;
                     if plane_id == 3 {
