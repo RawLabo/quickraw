@@ -29,33 +29,6 @@ pub struct ColorMatrix {
     pub(crate) clamp0: i32x4,
     pub(crate) clamp1: i32x4,
 }
-impl ColorMatrix {
-    fn apply_analogbalance(&mut self, ab: &[f64]) {
-        let a = [
-            ab[0] as f32,
-            0.,
-            0.,
-            0.,
-            ab[1] as f32,
-            0.,
-            0.,
-            0.,
-            ab[2] as f32,
-        ];
-        let b = self.matrix;
-        self.matrix = [
-            a[0] * b[0] + a[1] * b[3] + a[2] * b[6],
-            a[0] * b[1] + a[1] * b[4] + a[2] * b[7],
-            a[0] * b[2] + a[1] * b[5] + a[2] * b[8],
-            a[3] * b[0] + a[4] * b[3] + a[5] * b[6],
-            a[3] * b[1] + a[4] * b[4] + a[5] * b[7],
-            a[3] * b[2] + a[4] * b[5] + a[5] * b[8],
-            a[6] * b[0] + a[7] * b[3] + a[8] * b[6],
-            a[6] * b[1] + a[7] * b[4] + a[8] * b[7],
-            a[6] * b[2] + a[7] * b[5] + a[8] * b[8],
-        ];
-    }
-}
 impl From<[f32; 9]> for ColorMatrix {
     fn from(value: [f32; 9]) -> Self {
         Self {
@@ -88,6 +61,20 @@ impl From<Box<[f64]>> for ColorMatrix {
     }
 }
 
+fn matrix3_mul(a: &[f64], b: &[f64]) -> [f64; 9] {
+    assert!(a.len() == 9 && b.len() == 9);
+    [
+        a[0] * b[0] + a[1] * b[3] + a[2] * b[6],
+        a[0] * b[1] + a[1] * b[4] + a[2] * b[7],
+        a[0] * b[2] + a[1] * b[5] + a[2] * b[8],
+        a[3] * b[0] + a[4] * b[3] + a[5] * b[6],
+        a[3] * b[1] + a[4] * b[4] + a[5] * b[7],
+        a[3] * b[2] + a[4] * b[5] + a[5] * b[8],
+        a[6] * b[0] + a[7] * b[3] + a[8] * b[6],
+        a[6] * b[1] + a[7] * b[4] + a[8] * b[7],
+        a[6] * b[2] + a[7] * b[5] + a[8] * b[8],
+    ]
+}
 fn matrix3_normalize(x: &mut [f32]) {
     assert!(x.len() == 9);
     x.chunks_exact_mut(3).for_each(|x| {

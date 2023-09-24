@@ -19,8 +19,8 @@ mod dng_rule {
         0 {
             0xc717 is_converted
             0x0112 orientation
-            0xc621 color_matrix_1 
-            0xc622 color_matrix_2 
+            0xc621 color_matrix_1
+            0xc622 color_matrix_2
             0xc627 analog_balance
             0xc628 white_balance
 
@@ -108,8 +108,6 @@ impl Parse<DngInfo> for DngInfo {
         let is_converted = get!(is_converted).is_some();
         let color_matrix_1: ColorMatrix = get!(color_matrix_1 => r64s).into();
         let color_matrix_2: ColorMatrix = get!(color_matrix_2 => r64s).into();
-        // let analog_balance = get!(analog_balance => r64s);
-        // color_matrix_2.apply_analogbalance(&analog_balance);
 
         let orientation = get!(orientation, u16);
         let white_balance = get!(white_balance => r64s);
