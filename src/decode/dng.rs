@@ -27,7 +27,7 @@ impl Decode for DngInfo {
             height: self.height,
             white_balance: self.white_balance,
             cfa_pattern: self.cfa_pattern,
-            color_matrix: Some(self.color_matrix_2),
+            color_matrix: Some(self.color_matrix),
         }
     }
     fn decode_with_preprocess<RS: Read + Seek>(
@@ -47,17 +47,19 @@ impl Decode for DngInfo {
             (7, None) => {
                 // lossless compressed rgb
                 let mut image = self.decode_lossless_rgb(&mut reader).to_report()?;
-                for pixel in image.iter_mut() {
-                    *pixel = self.bl_then_wl(*pixel);
+                if let Some(table) = self.linearization_table.as_ref() {
+                    for pixel in image.iter_mut() {
+                        *pixel = table[*pixel as usize];
+                    }
+                } else {
+                    self.preprocess_over_slice(&mut image);
                 }
                 Ok(image.into_boxed_slice())
             }
             (7, _) => {
                 // lossless compressed bayer
                 let mut image = self.decode_lossless_bayer(&mut reader).to_report()?;
-                for pixel in image.iter_mut() {
-                    *pixel = self.bl_then_wl(*pixel);
-                }
+                self.preprocess_over_slice(&mut image);
                 Ok(image.into_boxed_slice())
             }
             (34892, _) => {

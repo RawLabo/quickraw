@@ -1,5 +1,8 @@
 use super::{CFAPattern, ColorMatrix, Parse, WhiteBalance};
-use crate::{parse::get_scaleup_factor, Error, ToReport};
+use crate::{
+    parse::{get_scaleup_factor, matrix3_mul},
+    Error, ToReport,
+};
 use erreport::Report;
 use std::io::{self, BufReader, Cursor, Read, Seek};
 
@@ -37,6 +40,7 @@ mod dng_rule {
             0x0143 tile_len0
             0xc61d white_level0
             0xc61a black_level0
+            0xc618 linearization_table0
         }
         0 -> 0x014a -> 0 {
             0x0100 width1
@@ -53,6 +57,7 @@ mod dng_rule {
             0xc61d white_level1
             0xc61a black_level1
             0xc741 opcodelist2
+            0xc618 linearization_table1
         }
         0 -> 0x014a -> 100 {
             0x0100 width2
@@ -76,9 +81,9 @@ pub struct DngInfo {
     pub is_le: bool,
     pub is_converted: bool,
     pub white_balance: WhiteBalance,
-    pub color_matrix_1: ColorMatrix,
-    pub color_matrix_2: ColorMatrix,
+    pub color_matrix: ColorMatrix,
     pub map_polynomial: [[u32; 4]; 4],
+    pub linearization_table: Option<Box<[u16]>>,
 
     pub compression: u16,
     pub strip_addr: u64,
@@ -106,8 +111,17 @@ impl Parse<DngInfo> for DngInfo {
         super::gen_get!(exif, dng_rule);
 
         let is_converted = get!(is_converted).is_some();
-        let color_matrix_1: ColorMatrix = get!(color_matrix_1 => r64s).into();
-        let color_matrix_2: ColorMatrix = get!(color_matrix_2 => r64s).into();
+        let color_matrix: ColorMatrix = {
+            let cm = get!(color_matrix_2 => r64s);
+            if let Some(ab) = get!(analog_balance).and_then(|x| x.r64s()) {
+                let ab = [ab[0], 0., 0., 0., ab[1], 0., 0., 0., ab[2]];
+                let cm_ab = matrix3_mul(&cm, &ab);
+                Box::new(cm_ab)
+            } else {
+                cm
+            }
+        }
+        .into();
 
         let orientation = get!(orientation, u16);
         let white_balance = get!(white_balance => r64s);
@@ -119,7 +133,7 @@ impl Parse<DngInfo> for DngInfo {
 
         let mut thumbnail = None;
         // detect if there is subifd-0
-        let (compression, tags): (u16, [&(u16, u16); 12]) = if let Some(compression) =
+        let (compression, tags): (u16, [&(u16, u16); 13]) = if let Some(compression) =
             get!(compression1)
         {
             // has subifd-0
@@ -149,6 +163,7 @@ impl Parse<DngInfo> for DngInfo {
                     dng_rule::black_level1,
                     dng_rule::cfa_pattern1,
                     dng_rule::bps1,
+                    dng_rule::linearization_table1,
                 ],
             )
         } else {
@@ -168,6 +183,7 @@ impl Parse<DngInfo> for DngInfo {
                     dng_rule::black_level0,
                     dng_rule::cfa_pattern0,
                     dng_rule::bps0,
+                    dng_rule::linearization_table0,
                 ],
             )
         };
@@ -209,16 +225,7 @@ impl Parse<DngInfo> for DngInfo {
         };
         let cfa_pattern = get!(tags[10]).map(|x| x.raw().into());
 
-        let bps = if let Some(x) = get!(tags[11]).and_then(|x| x.u16s()) {
-            x[0]
-        } else {
-            get!(tags[11], u16)
-        };
-        let scaleup_factor = match (bps, get_scaleup_factor(white_level)) {
-            (16, 0) => 0,
-            (bps, 0) => 16 - bps,
-            (_, wl) => wl,
-        };
+        let scaleup_factor = get_scaleup_factor(white_level);
 
         let mut map_polynomial = [[0u32; 4]; 4];
         if let Some(opcodelist) = get!(opcodelist2) {
@@ -253,6 +260,8 @@ impl Parse<DngInfo> for DngInfo {
             }
         }
 
+        let linearization_table = get!(tags[12]).and_then(|x| x.u16s());
+
         Ok(DngInfo {
             is_le,
             is_converted,
@@ -261,6 +270,7 @@ impl Parse<DngInfo> for DngInfo {
             orientation,
             cfa_pattern,
             compression,
+            linearization_table,
             black_level,
             scaleup_factor,
             white_balance: white_balance.into(),
@@ -271,8 +281,7 @@ impl Parse<DngInfo> for DngInfo {
             tile_width,
             tile_len,
             thumbnail,
-            color_matrix_1,
-            color_matrix_2,
+            color_matrix,
             map_polynomial,
         })
     }
